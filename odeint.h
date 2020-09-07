@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #define MAXSTP 1000000 
 #define TINY 1.0e-30 
-#define MAXSTEPS 5000
+#define MAXSTEPS 50000
 
 void odeint(double ystart[], int nvar, double x1, double x2, double eps, double h1, double hmin, int *nok, int *nbad, void (*derivs)(double, double [], double []), void (*rkqs)(double [], double [], int, double *, double, double, double [], double *, double *, void (*)(double, double [], double [])));
 

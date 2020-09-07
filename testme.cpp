@@ -47,12 +47,12 @@ void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
   double R_E=6371.; // in Km
   double R_OuterCore = 3480.;
 // travelling from the Earth outer core to the surface
-  //for(l=R_E-R_OuterCore; l>0.1;l-=1.0)
-  for(l=R_E-R_OuterCore; l>=R_E-R_OuterCore;l-=1.0)
+  for(l=R_E-R_OuterCore; l>0.1;l-=100.0)
+  //  for(l=R_E-R_OuterCore; l>=R_E-R_OuterCore;l-=1.0)
     {
        printf("l: %10.2f km\n",l);
 
-      e=0.003; // GeV
+      e=0.03; // GeV
       fprintf(f,"%10.2f ",l);
       for(imatter=0;imatter<2;imatter++)
 	{

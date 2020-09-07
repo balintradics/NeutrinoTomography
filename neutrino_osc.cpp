@@ -848,7 +848,7 @@ double density (double x)
 
   double rho_ret = 2.6;
 
-/**
+
   if(Dist>0. && Dist<1221.5) 
     rho_ret = (13.0885-8.8381*R*R);
   else if (Dist >=1221.5 && Dist<3480.)
@@ -867,26 +867,7 @@ double density (double x)
     rho_ret = 2.9;
   else if (Dist>=6356.6 && Dist <=R_E)
     rho_ret = 2.6;
-**/
 
-  if(Dist>0. && Dist<1221.5) 
-    rho_ret = (13.0885-8.8381*R*R);
-  else if (Dist >=1221.5 && Dist<3480.)
-    rho_ret = (12.5815-1.2638*R-3.6426*R*R-5.5281*R*R*R);
-  else if (Dist>=3480. && Dist<5701.)
-    rho_ret = (7.9565-6.4761*R + 5.5283*R*R-3.0807*R*R*R);
-  else if (Dist >=5701.0 && Dist<5771.0)
-    rho_ret = (5.3197-1.4836*R);
-  else if (Dist>=5771.0 && Dist<5971.0)
-    rho_ret = (11.2494-8.0298*R);
-  else if (Dist>=5971.0 && Dist<6151.0)
-    rho_ret = 19.3;
-  else if (Dist>=6151.0 && Dist<6346.6)
-    rho_ret = (2.6910+0.6924*R);
-  else if (Dist>=6346.6 && Dist<6356.6)
-    rho_ret = 2.9;
-  else if (Dist>=6356.6 && Dist <=R_E)
-    rho_ret = 2.6;
 
 //  printf("CostTheta: %10.4e, NeutL: %10.4e, x: %10.4e, Dist: %10.4e, Dist-R_E: %10.4e, density: %10.4e\n",  NeuOsc.CosTheta, NeuOsc.Length, x, Dist, Dist-R_E, rho_ret);
 
