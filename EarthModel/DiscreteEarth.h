@@ -95,14 +95,15 @@ class DiscreteEarth {
 
   // Return the density "along" a vectorial path during propagation
   // needs to be static in order to be callable from external sources
+  static double Density(double x, double y, double z);
   static double DensityAlong(double s); 
 
  public:
   // internally we represent the coordinates
   // with x, y, z Cartesian coordinates
   Cell_t * m_EarthCells;
-  static float m_DCell; // cell size
-  static int m_NCells; // number of cells
+  float m_DCell; // cell size
+  int m_NCells; // number of cells
 
   // variables to aide the neutrino propagation between Earth Cells
   // Origin and Target

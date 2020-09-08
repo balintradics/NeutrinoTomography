@@ -45,31 +45,11 @@ DiscreteEarth::DiscreteEarth(float dcell){
   for(float ix = -R_E; ix <= R_E; ix = ix + m_DCell){
     for(float iy = -R_E; iy <= R_E; iy = iy + m_DCell){
       for(float iz = -R_E; iz <= R_E; iz = iz + m_DCell){
-	r = sqrt(ix*ix+iy*iy+iz*iz);
-	if(r > R_E){
+	if(sqrt(ix*ix + iy*iy + iz*iz) > R_E){
 	}else{
+	  
 	  Cell_t cell;
-	  R = r/R_E;
-	  
-	  if(r>0. && r<1221.5) 
-	    rho_ret = (13.0885-8.8381*R*R);
-	  else if (r >=1221.5 && r<3480.)
-	    rho_ret = (12.5815-1.2638*R-3.6426*R*R-5.5281*R*R*R);
-	  else if (r>=3480. && r<5701.)
-	    rho_ret = (7.9565-6.4761*R + 5.5283*R*R-3.0807*R*R*R);
-	  else if (r >=5701.0 && r<5771.0)
-	    rho_ret = (5.3197-1.4836*R);
-	  else if (r>=5771.0 && r<5971.0)
-	    rho_ret = (11.2494-8.0298*R);
-	  else if (r>=5971.0 && r<6151.0)
-	    rho_ret = (7.1089-3.8045*R);
-	  else if (r>=6151.0 && r<6346.6)
-	    rho_ret = (2.6910+0.6924*R);
-	  else if (r>=6346.6 && r<6356.6)
-	    rho_ret = 2.9;
-	  else if (r>=6356.6 && r <=R_E)
-	    rho_ret = 2.6;
-	  
+	  rho_ret = Density(ix, iy,iz);
 	  cell.rho = rho_ret;
 	  cell.x = ix;
 	  cell.y = iy;
@@ -259,24 +239,11 @@ float DiscreteEarth::SetOriginTarget(Cell_t ocell, Cell_t tcell){
 }
 
 
-// Return the density "along" a vectorial path during propagation
-// It is used in the neutrino oscillation integrator on the r.h.s
-// of the diff. equation
-double DiscreteEarth::DensityAlong(double s){
-  // The input "s" is the position along the path 
-  // We just have to find the corresponding Cell and return the local
-  // density inside
-
-  float fractionalPath = s/m_PathLength;
-  // Current location is vOrigin + fractionalPath * vDirection
-  float m_Px = m_Ocell.x+fractionalPath*m_Dx;
-  float m_Py = m_Ocell.y+fractionalPath*m_Dy;
-  float m_Pz = m_Ocell.z+fractionalPath*m_Dz;
-
-  // Calculate fast the density
+double DiscreteEarth::Density(double x, double y, double z){
+  // Calculate fast the density at this point
   float rho_ret = 2.6;
 
-  float r = sqrt(m_Px*m_Px+m_Py*m_Py+m_Pz*m_Pz);
+  float r = sqrt(x*x+y*y+z*z);
   float R =0;
   if(r > R_E){
     rho_ret = 0.0;
@@ -302,6 +269,26 @@ double DiscreteEarth::DensityAlong(double s){
     else if (r>=6356.6 && r <=R_E)
       rho_ret = 2.6;
   }
+
+  return rho_ret;
+
+}
+
+// Return the density "along" a vectorial path during propagation
+// It is used in the neutrino oscillation integrator on the r.h.s
+// of the diff. equation
+double DiscreteEarth::DensityAlong(double s){
+  // The input "s" is the position along the path 
+  // We just have to find the corresponding Cell and return the local
+  // density inside
+
+  float fractionalPath = s/m_PathLength;
+  // Current location is vOrigin + fractionalPath * vDirection
+  float m_Px = m_Ocell.x+fractionalPath*m_Dx;
+  float m_Py = m_Ocell.y+fractionalPath*m_Dy;
+  float m_Pz = m_Ocell.z+fractionalPath*m_Dz;
+
+  double rho_ret = Density(m_Px, m_Py, m_Pz);
 
   //  cout << m_Px << "\t" << m_Py << "\t" << m_Pz << "\t" << rho_ret << endl;
 

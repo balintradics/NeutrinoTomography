@@ -28,9 +28,7 @@ float DiscreteEarth::m_Dx;
 float DiscreteEarth::m_Dy;
 float DiscreteEarth::m_Dz;
 float DiscreteEarth::m_PathLength;
-int DiscreteEarth::m_NCells;
 Cell_t DiscreteEarth::m_Ocell;
-float DiscreteEarth::m_DCell;
 
 void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
 {
