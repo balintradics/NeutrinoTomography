@@ -1039,7 +1039,11 @@ double nuox_propag_in_variable_density(int i,int j)
  // mprint(Hmatter);
 
   // Integration over traveled path
+#ifdef USE_EARTH_MODEL
+  odeint(ystart,equations,x1,x2,eps,h,hmin,&nok,&nbad,derivsDE,rkqs);
+#else
   odeint(ystart,equations,x1,x2,eps,h,hmin,&nok,&nbad,derivs,rkqs);
+#endif
   free(xp);
   free(yp[0]);
   free(yp);

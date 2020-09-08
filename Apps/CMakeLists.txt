@@ -1,6 +1,5 @@
 set(APPS
          test_neutrinoosc
-         test_dearth
 	 Nu_EarthCell)
 
 

@@ -190,10 +190,121 @@ Cell_t DiscreteEarth::GetRandomCell(){
 
 }
 
+Cell_t DiscreteEarth::GetSurfaceCell(float theta, float phi){
+  float x, y, z;
+  ToCartesian(R_E, theta, phi, &x, &y, &z);
+
+  //cout << "Looking for surface cell at: (r, theta, phi): " << R_E << ", " << theta << ", " << phi << endl;
+  //cout << "(x, y, z): " << x << ", " << y << ", " << z << endl;
+  
+  Cell_t result;
+  bool found = false;
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only print along x = 0, y = 0
+    if( fabs(m_EarthCells[i].x-x) <= m_DCell && fabs(m_EarthCells[i].y-y) <= m_DCell && fabs(m_EarthCells[i].z-z) <= m_DCell){
+      result = m_EarthCells[i];
+      found = true;
+      break;
+    }
+  }
+  if(!found){
+    cout<< "Cell not found" << endl;
+  }
+  return result;
+}
+
+Cell_t DiscreteEarth::GetCell(float x, float y, float z){
+  //cout << "Looking for surface cell at: (x, y, z): " << x << ", " << y << ", " << z << endl;
+  
+  Cell_t result;
+  bool found = false;
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only print along x = 0, y = 0
+    if( fabs(m_EarthCells[i].x-x) <= m_DCell && fabs(m_EarthCells[i].y-y) <= m_DCell && fabs(m_EarthCells[i].z-z) <= m_DCell){
+      result = m_EarthCells[i];
+      found = true;
+      break;
+    }
+  }
+  if(!found){
+    cout<< "Cell not found" << endl;
+  }
+  return result;
+
+}
+
+float DiscreteEarth::SetOriginTarget(Cell_t ocell, Cell_t tcell){
+  m_Ocell = ocell;
+  m_Tcell = tcell;
+
+ // Calculate the difference vector pointing
+ // to the surface cell from the original cell
+  m_Dx = m_Tcell.x - m_Ocell.x;
+  m_Dy = m_Tcell.y - m_Ocell.y;
+  m_Dz = m_Tcell.z - m_Ocell.z;
+
+  // Set the length
+  m_PathLength = sqrt(m_Dx*m_Dx + m_Dy*m_Dy + m_Dz*m_Dz);
+
+  // We have to pre-calculate the array of Cells that the
+  // neutrino will traverse (otherwise we would need to loop over
+  // O(million) cell at each step, which is not efficient)
+  float x0,y0,z0;
+  x0 = m_Ocell.x;
+  y0 = m_Ocell.y;
+  z0 = m_Ocell.z;
+
+  return m_PathLength;
+
+}
+
+
 // Return the density "along" a vectorial path during propagation
 // It is used in the neutrino oscillation integrator on the r.h.s
 // of the diff. equation
-double DiscreteEarth::DensityAlong(double L){
+double DiscreteEarth::DensityAlong(double s){
+  // The input "s" is the position along the path 
+  // We just have to find the corresponding Cell and return the local
+  // density inside
 
-  return 2.6;
+  float fractionalPath = s/m_PathLength;
+  // Current location is vOrigin + fractionalPath * vDirection
+  float m_Px = m_Ocell.x+fractionalPath*m_Dx;
+  float m_Py = m_Ocell.y+fractionalPath*m_Dy;
+  float m_Pz = m_Ocell.z+fractionalPath*m_Dz;
+
+  // Calculate fast the density
+  float rho_ret = 2.6;
+
+  float r = sqrt(m_Px*m_Px+m_Py*m_Py+m_Pz*m_Pz);
+  float R =0;
+  if(r > R_E){
+    rho_ret = 0.0;
+  }else{
+    R = r/R_E;
+	  
+    if(r>0. && r<1221.5) 
+      rho_ret = (13.0885-8.8381*R*R);
+    else if (r >=1221.5 && r<3480.)
+      rho_ret = (12.5815-1.2638*R-3.6426*R*R-5.5281*R*R*R);
+    else if (r>=3480. && r<5701.)
+      rho_ret = (7.9565-6.4761*R + 5.5283*R*R-3.0807*R*R*R);
+    else if (r >=5701.0 && r<5771.0)
+      rho_ret = (5.3197-1.4836*R);
+    else if (r>=5771.0 && r<5971.0)
+      rho_ret = (11.2494-8.0298*R);
+    else if (r>=5971.0 && r<6151.0)
+      rho_ret = (7.1089-3.8045*R);
+    else if (r>=6151.0 && r<6346.6)
+      rho_ret = (2.6910+0.6924*R);
+    else if (r>=6346.6 && r<6356.6)
+      rho_ret = 2.9;
+    else if (r>=6356.6 && r <=R_E)
+      rho_ret = 2.6;
+  }
+
+  //  cout << m_Px << "\t" << m_Py << "\t" << m_Pz << "\t" << rho_ret << endl;
+
+  return rho_ret;
+
 }

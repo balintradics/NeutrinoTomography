@@ -1,14 +1,13 @@
 #ifndef DISCRETEEARTH_H
 #define DISCRETEEARTH_H
 
-// goal: to have an object that can store at a given (r, phi theta)
+#include <vector>
+
+// DiscreteEarth class: provides an object that can store at a given (r, phi theta)
 //  - the local density
 //  - the local elemental/chemical composition
 //  - can plot or output the profiles of these along r, phi or theta
-
-// build:
-// $ g++ -c DiscreteEarth.cxx -I.
-// $ g++ -o test_dearth test_dearth.cxx -I. DiscreteEarth.o
+// This is to be used in conjuction with a neutrino propagation in material
 
 // ------------------------------------------------------
 // Geoneutrino flux model based on O. Sramek et al,
@@ -82,6 +81,8 @@ class DiscreteEarth {
 
   void PrintCell(Cell_t cell);
   Cell_t GetRandomCell();
+  Cell_t GetSurfaceCell(float theta, float phi);
+  Cell_t GetCell(float x, float y, float z);
   void ToSpherical(float x, float y, float z, float * r, float * theta, float * phi);
   void ToCartesian(float r, float theta, float phi, float * x, float * y, float * z);
   void SetUniformMantle();
@@ -90,16 +91,27 @@ class DiscreteEarth {
   void SaveDensityRToCSV(const char * ofilename = "density.csv");
   void SaveFluxToCSV(const char * ofilename = "surf_flux.csv");// latitude, longitude, flux
 
+  float SetOriginTarget(Cell_t ocell, Cell_t tcell);
+
   // Return the density "along" a vectorial path during propagation
   // needs to be static in order to be callable from external sources
-  static double DensityAlong(double L); 
+  static double DensityAlong(double s); 
 
  public:
   // internally we represent the coordinates
   // with x, y, z Cartesian coordinates
   Cell_t * m_EarthCells;
-  float m_DCell; // cell size
-  int m_NCells; // number of cells
+  static float m_DCell; // cell size
+  static int m_NCells; // number of cells
+
+  // variables to aide the neutrino propagation between Earth Cells
+  // Origin and Target
+  Cell_t m_Tcell; // Target
+  static Cell_t m_Ocell; // Origin
+  static float m_Dx; // Direction x
+  static float m_Dy; // Direction y
+  static float m_Dz; // Direction z
+  static float m_PathLength;
 
   // Structures to hold Atomic constants
   AtomConst_t U238;

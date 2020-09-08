@@ -1,5 +1,11 @@
 #include "thematrix.h"
 
+// Toggle whether to use the external
+// DiscreteEarth model to calculate the density
+// profile, or not
+// Comment out for default (not using external model)
+#define USE_EARTH_MODEL
+
 #define NDIM 3
 #define NU_ELECTRON 0
 #define NU_MUON     1

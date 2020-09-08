@@ -1,10 +1,21 @@
 #include "stdio.h"
 #include "math.h"
+#include <iostream>
 
 #include "../EarthModel/DiscreteEarth.h"
 #include "../NeutrinoOsc/neutrino_osc.h"
 
 #define PIGREEK 3.141592654
+
+// Need to re-declare static variables
+// that are used in the classes
+float DiscreteEarth::m_Dx;
+float DiscreteEarth::m_Dy;
+float DiscreteEarth::m_Dz;
+float DiscreteEarth::m_PathLength;
+int DiscreteEarth::m_NCells;
+Cell_t DiscreteEarth::m_Ocell;
+float DiscreteEarth::m_DCell;
 
 int main(int argc, char * argv[]) {
 
@@ -31,16 +42,31 @@ double dm21=7.59e-5;
 
  
  DiscreteEarth d(100.0); // km cell size
- Cell_t c = d.GetRandomCell();
+
+ // Get a random cell
+ //Cell_t c = d.GetRandomCell();
+ //  Cell_t c = d.GetCell(0.0, 0.0, 0.0);
+ Cell_t c = d.GetCell(-2171, 0, -4000);
  d.PrintCell(c);
 
-  double R_OuterCore = 3480.;
+ // Get a surface cell at (theta phi)
+ Cell_t s = d.GetSurfaceCell(0.0, PIGREEK/2);
+ d.PrintCell(s);
+
+
+ // Then start from a vector pointing to the original cell
+ // and incrementally add a scaled difference vector to it,
+ // until it reaches the target
+ float Length = d.SetOriginTarget(c, s);
+
+
+ // double R_OuterCore = 3480.;
 
 
   // Anti-Neutrino energy
   double e = 0.03; // GeV
 
-  double depth = R_E - R_LM;
+  //  double depth = R_E - R_LM;
 
   double prob;
 
@@ -48,8 +74,9 @@ double dm21=7.59e-5;
   nuox_set_propag_level(2,0);
   /* anti-neutrino oscillation */
   nuox_input_matrix_CKM(dm32,dm21,t12,t13,t23,delta);
-  nuox_set_neutrino(depth,e,-1);
+  nuox_set_neutrino(Length,e,-1);
   prob=nuox_osc_prob(NU_ELECTRON,NU_ELECTRON);
 
+  std::cout << "Probability: " << prob << std::endl;
   return 0;
 }

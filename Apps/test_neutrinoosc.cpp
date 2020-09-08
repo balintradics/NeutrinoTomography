@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "math.h"
 
+#include "../EarthModel/DiscreteEarth.h"
 #include "../NeutrinoOsc/neutrino_osc.h"
 //#include "dstconst.h"
 //#include "evstore.h"
@@ -20,6 +21,16 @@
 #endif
 
 #define PIGREEK 3.141592654
+
+// Need to re-declare static variables
+// that are used in the classes
+float DiscreteEarth::m_Dx;
+float DiscreteEarth::m_Dy;
+float DiscreteEarth::m_Dz;
+float DiscreteEarth::m_PathLength;
+int DiscreteEarth::m_NCells;
+Cell_t DiscreteEarth::m_Ocell;
+float DiscreteEarth::m_DCell;
 
 void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
 {
