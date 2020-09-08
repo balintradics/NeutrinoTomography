@@ -1,4 +1,6 @@
 #include "math.h"
+#include "stdlib.h"
+#include <time.h> 
 #include "iostream"
 #include "fstream"
 
@@ -81,6 +83,33 @@ DiscreteEarth::DiscreteEarth(float dcell){
   }
 
   cout << "Allocated " << m_NCells << ", " << Celli << " cells" << endl;
+
+U238.X = 0.9927;
+U238.M = 238.051;
+U238.Tau = 4.468;
+U238.Lamb = 4.916;
+U238.Mnu = 6;
+
+
+U235.X = 0.007204;
+U235.M =235.044 ;
+U235.Tau = 0.704;
+U235.Lamb = 31.2;
+U235.Mnu = 4;
+
+Th232.X = 1.0;
+Th232.M = 232.038;
+Th232.Tau = 14.05;
+Th232.Lamb = 1.563;
+Th232.Mnu = 4;
+
+K40.X = 117.0e-06;
+K40.M = 39.9640;
+K40.Tau = 1.265;
+K40.Lamb = 17.36;
+K40.Mnu = 0.8928;
+
+
   
 }
 
@@ -89,6 +118,8 @@ DiscreteEarth::~DiscreteEarth(){
   delete[] m_EarthCells; 
 
 }
+
+
 
 void DiscreteEarth::SaveDensityRToCSV(const char * ofilename){
     
@@ -118,4 +149,43 @@ void DiscreteEarth::SaveEarthToCSV(const char * ofilename){
 }
 // latitude, longitude, flux
 void DiscreteEarth::SaveFluxToCSV(const char * ofilename){
+
+
+}
+
+
+void DiscreteEarth::ToSpherical(float x, float y, float z, float * r, float * theta, float * phi){
+  *r = sqrt(x*x + y*y + z*z);
+  *theta = acos(z/(*r));// check r if it is null?
+  *phi = atan(y/x);// check x if it is null?
+}
+
+void DiscreteEarth::ToCartesian(float r, float theta, float phi, float * x, float * y, float * z){
+  *x = r*sin(theta)*cos(phi);
+  *y = r*sin(theta)*sin(phi);
+  *z = r*cos(theta);
+}
+
+
+
+void DiscreteEarth::PrintCell(Cell_t cell){
+  cout << "-----------" << endl;
+  cout << " E A R T H  C E L L: " << endl;
+  cout << "-----------" << endl;
+  cout << " X= " <<  cell.x << " km " << endl;
+  cout << " Y= " <<  cell.y << " km " << endl;
+  cout << " Z= " <<  cell.z << " km " << endl;
+  cout << " rho= " << cell.rho << " g/cm3 " << endl;
+  cout << " a_238U= " << cell.a238U << endl;
+  cout << " a_235U= " << cell.a235U << endl;
+  cout << " a_232Th= " << cell.a232Th << endl;
+  cout << " a_40K= " << cell.a40K << endl;
+  cout << "-----------" << endl;
+}
+
+Cell_t DiscreteEarth::GetRandomCell(){
+  /* initialize random seed: */
+  srand (time(NULL));
+  return m_EarthCells[rand() % m_NCells];
+
 }

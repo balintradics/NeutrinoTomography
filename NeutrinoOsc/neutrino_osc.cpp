@@ -825,7 +825,7 @@ double density (double x)
   //Dist=sqrt( SQR(NeuOsc.Length-x) + SQR(R_E) - 2.*R_E*(NeuOsc.Length-x)*fabs(NeuOsc.CosTheta) );
   // |(\vec{R_E} - (\vec{L - x}) )|
 
-  // Simple geometrical distance from the Earth's surface
+  // Simple geometrical distance from the Earth's surface from Depth "NeuOscLength"
   Dist=R_E - NeuOsc.Length + x;
   if((Dist-R_E)>0.)
     return 0.; // Most likely propragation through the atmosphere: density value=0.
@@ -955,7 +955,7 @@ double nuox_propag_in_variable_density(int i,int j)
   H1=mmul(Mmass,Mdag);
 //  mprint(H1);
   H=mmul(Mmix,H1);
-  mprint(H);
+  //  mprint(H);
 
   // Get hamiltonian in matter
   p.Im=0.;
