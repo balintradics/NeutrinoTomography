@@ -1,8 +1,8 @@
 # Neutrino Tomography of Earth
 
 ## Description:
-Set of codes to solve the complex diff. equation of neutron propagation through vacuum/material
-and to build a discretized Earth model with Radioactive Isotope distributon and Density models.
+Set of codes to solve the complex diff. equation of neutrino propagation through vacuum/material
+combined with a customized discretized Earth model with Radioactive Isotope distributon and Density models.
 
 ## Build instrunctions:
 ```
