@@ -90,6 +90,10 @@ class DiscreteEarth {
   void SaveDensityRToCSV(const char * ofilename = "density.csv");
   void SaveFluxToCSV(const char * ofilename = "surf_flux.csv");// latitude, longitude, flux
 
+  // Return the density "along" a vectorial path during propagation
+  // needs to be static in order to be callable from external sources
+  static double DensityAlong(double L); 
+
  public:
   // internally we represent the coordinates
   // with x, y, z Cartesian coordinates

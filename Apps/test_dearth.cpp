@@ -1,10 +1,10 @@
-#include "DiscreteEarth.h"
+#include "../EarthModel/DiscreteEarth.h"
 
 int main(){
 
-  DiscreteEarth d(40.0); // km cell size
-  //  d.PrintDensityR();
-  //d.SaveEarthToCSV();
+  DiscreteEarth d(100.0); // km cell size
+  //d.PrintDensityR();
+  d.SaveEarthToCSV();
 
   // pseudo-code
   // loop over each cell:

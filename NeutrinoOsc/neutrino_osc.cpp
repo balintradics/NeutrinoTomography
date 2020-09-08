@@ -12,6 +12,7 @@
 
 #define CUBE(a) ((a)*(a)*(a))
 
+#include "../EarthModel/DiscreteEarth.h"
 #include "neutrino_osc.h"
 #include "odeint.h"
 
@@ -792,6 +793,7 @@ void locate(double xx[], int n, double x, int *j)
     *j=jl; 
 }
 
+
 double density (double x) 
 {
   int j=0;
@@ -873,6 +875,50 @@ double density (double x)
 
   //default return 2.6
   return rho_ret;
+}
+
+
+// Custom derivs function to evaluate the r.h.s of the diff. equation
+// The only difference w.r.t. to the original derivs is the local density 
+// function is called from the external DiscreteEarth class
+void derivsDE(double x,double y[],double dydx[]){
+  int i,j,kk=0;
+  double matterparam;
+  // Compute factor = 2.*sqrt(2) * G_F * Y_e * rho * E /m_p
+  // energy is given in GeV, distance in Km, mass in grams
+  // to get right dimensions we compute parammsw = factor/(2 * hbarc * E)
+  // and the value entering the calculation is...
+  double parammsw=1.9207e-4;
+  //  double parammsw=9.6035e-5;
+ 
+  complex a[NDIM],b[NDIM];
+
+  // Additional potential in matter
+  matterparam= parammsw*DiscreteEarth::DensityAlong(x)*NeuOsc.neutype;
+  Hmatter.m[0][0].Re+=matterparam;
+
+  // Create complex numbers to be used in function definition
+  for(j=0;j<NDIM;j++)
+    {
+      dydx[j]=dydx[j+NDIM]=0.;
+      a[j].Re=y[j];
+      a[j].Im=y[j+NDIM];
+      creset(&b[j]);
+    }
+
+  // The function to be integrated
+  for(i=0;i<NDIM;i++)
+    {
+      for(j=0;j<NDIM;j++)
+	{
+	  b[i]=cadd(b[i],cmul(Hmatter.m[i][j],a[j]));
+	}
+      dydx[i]=b[i].Im;
+      dydx[i+NDIM]=-b[i].Re;
+    }
+
+  // get back to old matter hamiltonian
+  Hmatter.m[0][0].Re-=matterparam;
 }
 
 void derivs(double x,double y[],double dydx[])

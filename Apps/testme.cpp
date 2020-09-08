@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "math.h"
 
-#include "neutrino_osc.h"
+#include "../NeutrinoOsc/neutrino_osc.h"
 //#include "dstconst.h"
 //#include "evstore.h"
 
