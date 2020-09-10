@@ -20,13 +20,14 @@ int main(int argc, char * argv[]) {
 
   // Given an Earth Cell, its "Depth" depends on from which
   // direction we are looking down at it. This direction is 
-  // parametrized by an angle (later 2 angles for 3D).
+  // parametrized by two angles
   
   // To send a neutrino from a given Depth under an angle
   // to a point on the surface, we need to give the
   // - Travel Distance: vectorial difference between the Earth's surface
   // point and the neutrino source
   // - Density profile: along the line of sight for the neutrino
+  // This is provided by the DiscreteEarth class
   
   // double Angles (from Koike and Sato!)
   double t12=33.0/180.0*PIGREEK;
@@ -52,13 +53,14 @@ int main(int argc, char * argv[]) {
   // Flux(r) = (nX * LambX/4pi) * \int P(r', r) * aX(r')*rho(r')/(|r-r'|)^2 dr'
   // units: 1 * [1/s] * 1 * [1/kg] * [kg/m3] * m3 / m2 = [m2 / s]
   
-  // Get a surface cell at (theta phi)
-  Cell_t s = d.GetSurfaceCell(0.0, PIGREEK/2);
+  // Get a surface cell at (theta, phi)
+  double l = PIGREEK/2;
+  Cell_t s = d.GetSurfaceCell(0.0, l);
   d.PrintCell(s);
 
 
   // Get list of cells at a given Longitude
-  std::vector<Cell_t> cells = d.GetCellsLongitude(PIGREEK*45.0/180.0);
+  std::vector<Cell_t> cells = d.GetCellsLongitude(l);
 
   // Number of cells with non-zero activity
   int Ncells = 0;

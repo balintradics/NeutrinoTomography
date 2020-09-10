@@ -19,7 +19,7 @@ int main(int argc, char * argv[]) {
 
   // Given an Earth Cell, its "Depth" depends on from which
   // direction we are looking down at it. This direction is 
-  // parametrized by an angle (later 2 angles for 3D).
+  // parametrized by two angles
   
   // To send a neutrino from a given Depth under an angle
   // to a point on the surface, we need to give the

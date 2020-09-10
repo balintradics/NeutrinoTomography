@@ -25,7 +25,7 @@ int main(int argc, char * argv[]) {
   d.SetUniformMantle(d.DepMantle);
 
   //  d.SaveActivityMap2DToCSV();
-  d.SaveCellsLongitudeToCSV(PIGREEK*45.0/180.0);
+  //  d.SaveCellsLongitudeToCSV(PIGREEK*45.0/180.0);
 
 
   // We calculate the Neutrino Flux by summing over all cells
