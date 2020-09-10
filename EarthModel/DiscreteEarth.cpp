@@ -20,11 +20,13 @@ DiscreteEarth::DiscreteEarth(double dcell){
   // We calculate it dynamically...
   m_NCells = 0;
   m_EarthCells = NULL;
+  double r = 0;
   for(double ix = -R_E; ix <= R_E; ix = ix + m_DCell){
     for(double iy = -R_E; iy <= R_E; iy = iy + m_DCell){
       for(double iz = -R_E; iz <= R_E; iz = iz + m_DCell){
 	// skip cells that would be outside of the Earth volume
-	if(sqrt(ix*ix + iy*iy + iz*iz) > R_E){
+	r = sqrt(ix*ix + iy*iy + iz*iz);
+	if(r > R_E){
 	}else{
 	  m_NCells++;
 	}
@@ -39,13 +41,13 @@ DiscreteEarth::DiscreteEarth(double dcell){
   // Now fill the values
   // Using hard-coded density values!
   int Celli = 0;
+  int SurfCell = 0;
   double rho_ret = 2.6 * 1000./1e-09; // g/cm3 -> kg/km3
-  double r = 0;
-  double R = 0;
   for(double ix = -R_E; ix <= R_E; ix = ix + m_DCell){
     for(double iy = -R_E; iy <= R_E; iy = iy + m_DCell){
       for(double iz = -R_E; iz <= R_E; iz = iz + m_DCell){
-	if(sqrt(ix*ix + iy*iy + iz*iz) > R_E){
+	r = sqrt(ix*ix + iy*iy + iz*iz);
+	if(r > R_E){
 	}else{
 	  
 	  Cell_t cell;
@@ -54,7 +56,13 @@ DiscreteEarth::DiscreteEarth(double dcell){
 	  cell.x = ix;
 	  cell.y = iy;
 	  cell.z = iz;
-	  
+
+	  if(fabs(r - R_E) <= m_DCell){
+	    cell.Surf = true;
+	    SurfCell++;
+	  }else{
+	    cell.Surf = false;
+	  }
 	  m_EarthCells[Celli] = cell;
 	  Celli++;
 	}
@@ -62,7 +70,7 @@ DiscreteEarth::DiscreteEarth(double dcell){
     }
   }
 
-  cout << "Allocated " << m_NCells << ", " << Celli << " cells" << endl;
+  cout << "Allocated " << m_NCells << " cells, inclusive " << SurfCell << " surface cells" << endl;
 
   // Set Atomic constants
   U238.X = 0.9927;
@@ -105,7 +113,7 @@ DiscreteEarth::~DiscreteEarth(){
 }
 
 // Outputs the list of cells lying in the plane of a longitude
-void DiscreteEarth::SaveCellsLongitudeToCSV(double phi_fix, const char * ofilename){
+void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilename){
   // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
   // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
   // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
@@ -158,7 +166,7 @@ void DiscreteEarth::SaveCellsLongitudeToCSV(double phi_fix, const char * ofilena
 
 
 //Outputs the list of cells in the Y-Z plane
-void DiscreteEarth::SaveActivityMap2DToCSV(const char * ofilename){
+void DiscreteEarth::SaveActivityMap2DToFile(const char * ofilename){
     
   ofstream outfile;
   outfile.open(ofilename);
@@ -173,8 +181,25 @@ void DiscreteEarth::SaveActivityMap2DToCSV(const char * ofilename){
 
 }
 
+//Outputs the list of cells in the Y-Z plane
+void DiscreteEarth::SaveSurfaceCellsToFile(const char * ofilename){
+    
+  ofstream outfile;
+  outfile.open(ofilename);
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only save if Surface
+    if(m_EarthCells[i].Surf){
+      outfile  << m_EarthCells[i].x << "\t" << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
+    }
+  }
+  outfile.close();
 
-void DiscreteEarth::SaveDensityRToCSV(const char * ofilename){
+}
+
+
+
+
+void DiscreteEarth::SaveDensityRToFile(const char * ofilename){
     
   ofstream outfile;
   outfile.open(ofilename);
@@ -190,7 +215,7 @@ void DiscreteEarth::SaveDensityRToCSV(const char * ofilename){
 
 }
 
-void DiscreteEarth::SaveEarthToCSV(const char * ofilename){
+void DiscreteEarth::SaveEarthToFile(const char * ofilename){
   cout << "Saving : " << m_NCells << " cells values to " << ofilename << endl;    
   ofstream outfile;
   outfile.open(ofilename);
@@ -201,7 +226,7 @@ void DiscreteEarth::SaveEarthToCSV(const char * ofilename){
 
 }
 // latitude, longitude, flux
-void DiscreteEarth::SaveFluxToCSV(const char * ofilename){
+void DiscreteEarth::SaveFluxToFile(const char * ofilename){
 
 
 }
@@ -228,11 +253,17 @@ void DiscreteEarth::PrintCell(Cell_t cell){
   cout << " X= " <<  cell.x << " km " << endl;
   cout << " Y= " <<  cell.y << " km " << endl;
   cout << " Z= " <<  cell.z << " km " << endl;
+  if(cell.Surf){
+    cout << " Surface cell = " << " True " << std::endl;
+  }else{
+    cout << " Surface cell = " << " False " << std::endl;
+  }
   cout << " rho= " << cell.rho << " kg/km3 " << endl;
   cout << " a_238U= " << cell.a238U << " /kg " << endl;
   cout << " a_235U= " << cell.a235U << " /kg " << endl;
   cout << " a_232Th= " << cell.a232Th << " /kg" << endl;
   cout << " a_40K= " << cell.a40K << " /kg " << endl;
+
   cout << "-----------" << endl;
 }
 
@@ -254,7 +285,7 @@ Cell_t DiscreteEarth::GetSurfaceCell(double theta, double phi){
   bool found = false;
   for(unsigned int i = 0; i < m_NCells; i++){
     // only print along x = 0, y = 0
-    if( fabs(m_EarthCells[i].x-x) <= m_DCell && fabs(m_EarthCells[i].y-y) <= m_DCell && fabs(m_EarthCells[i].z-z) <= m_DCell){
+    if( m_EarthCells[i].Surf == true && fabs(m_EarthCells[i].x-x) <= m_DCell && fabs(m_EarthCells[i].y-y) <= m_DCell && fabs(m_EarthCells[i].z-z) <= m_DCell){
       result = m_EarthCells[i];
       found = true;
       break;

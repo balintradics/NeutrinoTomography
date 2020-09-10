@@ -24,8 +24,9 @@ int main(int argc, char * argv[]) {
   // this is done by the DiscreteEarth class
   d.SetUniformMantle(d.DepMantle);
 
-  //  d.SaveActivityMap2DToCSV();
-  //  d.SaveCellsLongitudeToCSV(PIGREEK*45.0/180.0);
+  //  d.SaveActivityMap2DToFile();
+  //  d.SaveCellsLongitudeToFile(PIGREEK*45.0/180.0);
+  d.SaveSurfaceCellsToFile();
 
 
   // We calculate the Neutrino Flux by summing over all cells

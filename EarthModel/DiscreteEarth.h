@@ -77,6 +77,7 @@ struct Cell_t{
   double a235U; // rel. abundance of 235U rad. isotope
   double a232Th; // rel. abundance of 232Th rad. isotope
   double a40K; // rel. abundance of 40K rad. isotope
+  bool Surf; // indicate wether this cell is a surface cell
 };
   
 // Spherical coordinate system
@@ -99,11 +100,12 @@ class DiscreteEarth {
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
 
-  void SaveActivityMap2DToCSV(const char * ofilename = "activity_model.csv");
-  void SaveCellsLongitudeToCSV(double phi_fix, const char * ofilename = "activity_model_long.csv");
-  void SaveEarthToCSV(const char * ofilename = "earth_model.csv");
-  void SaveDensityRToCSV(const char * ofilename = "density.csv");
-  void SaveFluxToCSV(const char * ofilename = "surf_flux.csv");// latitude, longitude, flux
+  void SaveActivityMap2DToFile(const char * ofilename = "activity_model.dat");
+  void SaveCellsLongitudeToFile(double phi_fix, const char * ofilename = "activity_model_long.dat");
+  void SaveSurfaceCellsToFile(const char * ofilename = "surface_cells.dat");
+  void SaveEarthToFile(const char * ofilename = "earth_model.dat");
+  void SaveDensityRToFile(const char * ofilename = "density.dat");
+  void SaveFluxToFile(const char * ofilename = "surf_flux.dat");// latitude, longitude, flux
 
   // Utility operators to compare cells
   bool IsEqual(Cell_t a, Cell_t b) const;
