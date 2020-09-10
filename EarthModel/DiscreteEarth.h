@@ -94,8 +94,13 @@ class DiscreteEarth {
   Cell_t GetRandomCell();
   Cell_t GetSurfaceCell(double theta, double phi);
   Cell_t GetCell(double x, double y, double z);
+  std::vector<Cell_t> GetCellsLongitude(double phi_fix);
+
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
+
+  void SaveActivityMap2DToCSV(const char * ofilename = "activity_model.csv");
+  void SaveCellsLongitudeToCSV(double phi_fix, const char * ofilename = "activity_model_long.csv");
   void SaveEarthToCSV(const char * ofilename = "earth_model.csv");
   void SaveDensityRToCSV(const char * ofilename = "density.csv");
   void SaveFluxToCSV(const char * ofilename = "surf_flux.csv");// latitude, longitude, flux

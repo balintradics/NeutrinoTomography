@@ -18,28 +18,28 @@ Cell_t DiscreteEarth::m_Ocell;
 int main(int argc, char * argv[]) {
 
 
-// Given an Earth Cell, its "Depth" depends on from which
-// direction we are looking down at it. This direction is 
-// parametrized by an angle (later 2 angles for 3D).
-
-// To send a neutrino from a given Depth under an angle
-// to a point on the surface, we need to give the
-// - Travel Distance: vectorial difference between the Earth's surface
-// point and the neutrino source
-// - Density profile: along the line of sight for the neutrino
-
-// double Angles (from Koike and Sato!)
-double t12=33.0/180.0*PIGREEK;
-double t13=asin(sqrt(0.025));
-double t23 = PIGREEK/4.0;
-// deltaCP
-double delta=-90./180.0*PIGREEK;
-// Differences in mass squared
-double dm32=2.32e-3;
-double dm21=7.59e-5;
-
- 
- DiscreteEarth d(100.0); // km cell size
+  // Given an Earth Cell, its "Depth" depends on from which
+  // direction we are looking down at it. This direction is 
+  // parametrized by an angle (later 2 angles for 3D).
+  
+  // To send a neutrino from a given Depth under an angle
+  // to a point on the surface, we need to give the
+  // - Travel Distance: vectorial difference between the Earth's surface
+  // point and the neutrino source
+  // - Density profile: along the line of sight for the neutrino
+  
+  // double Angles (from Koike and Sato!)
+  double t12=33.0/180.0*PIGREEK;
+  double t13=asin(sqrt(0.025));
+  double t23 = PIGREEK/4.0;
+  // deltaCP
+  double delta=-90./180.0*PIGREEK;
+  // Differences in mass squared
+  double dm32=2.32e-3;
+  double dm21=7.59e-5;
+  
+  
+  DiscreteEarth d(100.0); // km cell size
 
  // Get a random cell
  //Cell_t c = d.GetRandomCell();

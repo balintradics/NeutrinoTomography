@@ -104,6 +104,74 @@ DiscreteEarth::~DiscreteEarth(){
 
 }
 
+// Outputs the list of cells lying in the plane of a longitude
+void DiscreteEarth::SaveCellsLongitudeToCSV(double phi_fix, const char * ofilename){
+  // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
+  // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
+  // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
+  
+  // We pick 2 vectors in the plane
+  double P0x, P0y, P0z; // given by the longitude
+  ToCartesian(R_E, 2.0, phi_fix, &P0x,&P0y, &P0z);
+  double P1x, P1y, P1z;
+  ToCartesian(R_E, 2.5, phi_fix, &P1x,&P1y, &P1z);
+  double P2x, P2y, P2z;
+  ToCartesian(R_E, 3.0, phi_fix, &P2x,&P2y, &P2z);
+
+  double v1x = P1x - P0x;
+  double v1y = P1y - P0y;
+  double v1z = P1z - P0z;
+  double v2x = P2x - P0x;
+  double v2y = P2y - P0y;
+  double v2z = P2z - P0z;
+
+  // The cross product will give a vector orthogonal to the plane
+  double nx, ny, nz;
+  nx = v1y*v2z - v1z*v2y;
+  ny = v1z*v2x - v1x*v2z;
+  nz = v1x*v2y - v1y*v2x;
+  double nMag = sqrt(nx*nx + ny*ny + nz*nz);
+  nx /= nMag;
+  ny /= nMag;
+  nz /= nMag;
+  
+  double dx, dy, dz, dMag;
+  double prod = 0;
+  ofstream outfile;
+  outfile.open(ofilename);
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only save cells that lie in the (vicinity of the) plane
+    dx = (m_EarthCells[i].x - P0x);
+    dy = (m_EarthCells[i].y - P0y);
+    dz = (m_EarthCells[i].z - P0z);
+    dMag = sqrt(nx*nx + ny*ny + nz*nz);
+    dx /= dMag; dy /= dMag; dz /= dMag;
+    prod = nx*dx + ny*dy + nz*dz;
+    //    std::cout << m_EarthCells[i].x << ", " << m_EarthCells[i].y << ", " << m_EarthCells[i].z << ": " << prod << std::endl;
+    if( fabs(prod) <= 100 ){
+      outfile  << m_EarthCells[i].x << "\t" << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
+    }
+  }
+  outfile.close();
+
+}
+
+
+//Outputs the list of cells in the Y-Z plane
+void DiscreteEarth::SaveActivityMap2DToCSV(const char * ofilename){
+    
+  ofstream outfile;
+  outfile.open(ofilename);
+  double r = 0;
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only save along x = 0
+    if( fabs(m_EarthCells[i].x) <= m_DCell && fabs(m_EarthCells[i].y) >= 0){
+      outfile  << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
+    }
+  }
+  outfile.close();
+
+}
 
 
 void DiscreteEarth::SaveDensityRToCSV(const char * ofilename){
@@ -215,6 +283,60 @@ Cell_t DiscreteEarth::GetCell(double x, double y, double z){
     cout<< "Cell not found" << endl;
   }
   return result;
+
+}
+
+
+// Returns the list of cells lying in the plane of a longitude
+std::vector<Cell_t> DiscreteEarth::GetCellsLongitude(double phi_fix){
+  // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
+  // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
+  // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
+  
+  // We pick 2 vectors in the plane
+  double P0x, P0y, P0z; // given by the longitude
+  ToCartesian(R_E, 2.0, phi_fix, &P0x,&P0y, &P0z);
+  double P1x, P1y, P1z;
+  ToCartesian(R_E, 2.5, phi_fix, &P1x,&P1y, &P1z);
+  double P2x, P2y, P2z;
+  ToCartesian(R_E, 3.0, phi_fix, &P2x,&P2y, &P2z);
+
+  double v1x = P1x - P0x;
+  double v1y = P1y - P0y;
+  double v1z = P1z - P0z;
+  double v2x = P2x - P0x;
+  double v2y = P2y - P0y;
+  double v2z = P2z - P0z;
+
+  // The cross product will give a vector orthogonal to the plane
+  double nx, ny, nz;
+  nx = v1y*v2z - v1z*v2y;
+  ny = v1z*v2x - v1x*v2z;
+  nz = v1x*v2y - v1y*v2x;
+  double nMag = sqrt(nx*nx + ny*ny + nz*nz);
+  nx /= nMag;
+  ny /= nMag;
+  nz /= nMag;
+  
+  double dx, dy, dz, dMag;
+  double prod = 0;
+  ofstream outfile;
+  std::vector<Cell_t> cell_vec;
+  for(unsigned int i = 0; i < m_NCells; i++){
+    // only save cells that lie in the (vicinity of the) plane
+    dx = (m_EarthCells[i].x - P0x);
+    dy = (m_EarthCells[i].y - P0y);
+    dz = (m_EarthCells[i].z - P0z);
+    dMag = sqrt(nx*nx + ny*ny + nz*nz);
+    dx /= dMag; dy /= dMag; dz /= dMag;
+    prod = nx*dx + ny*dy + nz*dz;
+
+    if( fabs(prod) <= 100 ){
+      cell_vec.push_back(m_EarthCells[i]);
+    }
+  }
+  
+  return cell_vec;
 
 }
 
