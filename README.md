@@ -23,7 +23,7 @@ $ cmake3 ../nutomo
 $ make
 ```
 
-## Then try to run the various executables in the `Apps` folder
+## Applications in the `Apps` folder
 
 Example apps:
  * `Run_NuFlux_Simple.cpp` : setup of a simplified, uniform Mantle radiogenic model, and fast calculation of antineutrino flux from 238U at a given surface position integrating over the whole planet
