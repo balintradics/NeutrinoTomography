@@ -9,10 +9,10 @@
 
 // Need to re-declare static variables
 // that are used in the classes
-float DiscreteEarth::m_Dx;
-float DiscreteEarth::m_Dy;
-float DiscreteEarth::m_Dz;
-float DiscreteEarth::m_PathLength;
+double DiscreteEarth::m_Dx;
+double DiscreteEarth::m_Dy;
+double DiscreteEarth::m_Dz;
+double DiscreteEarth::m_PathLength;
 Cell_t DiscreteEarth::m_Ocell;
 
 int main(int argc, char * argv[]) {
@@ -55,14 +55,14 @@ double dm21=7.59e-5;
  // Then start from a vector pointing to the original cell
  // and incrementally add a scaled difference vector to it,
  // until it reaches the target
- float Length = d.SetOriginTarget(c, s);
+ double Length = d.SetOriginTarget(c, s);
 
 
  // double R_OuterCore = 3480.;
 
 
   // Anti-Neutrino energy
-  double e = 0.03; // GeV
+  double e = 0.003; // GeV
 
   //  double depth = R_E - R_LM;
 

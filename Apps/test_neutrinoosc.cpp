@@ -6,6 +6,10 @@
 //#include "dstconst.h"
 //#include "evstore.h"
 
+// Note: this code is only for testing purposes, it only 
+// works if in NeutrinoOsc/neutrino_osc.h this line is commented out:
+// #define USE_EARTH_MODEL
+
 //#define DMAX 732
 //#define EMAX 7.5
 #define SHOBAS
@@ -24,10 +28,10 @@
 
 // Need to re-declare static variables
 // that are used in the classes
-float DiscreteEarth::m_Dx;
-float DiscreteEarth::m_Dy;
-float DiscreteEarth::m_Dz;
-float DiscreteEarth::m_PathLength;
+double DiscreteEarth::m_Dx;
+double DiscreteEarth::m_Dy;
+double DiscreteEarth::m_Dz;
+double DiscreteEarth::m_PathLength;
 Cell_t DiscreteEarth::m_Ocell;
 
 void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
@@ -61,7 +65,7 @@ void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
     {
        printf("l: %10.2f km\n",l);
 
-      e=0.03; // GeV
+      e=0.6; // GeV
       fprintf(f,"%10.2f ",l);
       for(imatter=0;imatter<2;imatter++)
 	{
@@ -83,7 +87,7 @@ void plot_osc_vs_l(double rho, char *fname, int inu, int jnu)
 //	 nuox_set_neutrino_costheta(0.);
 
 	  pnuenumu[imatter]=nuox_osc_prob(inu,jnu);
-	 // pnumunue[imatter]=nuox_osc_prob(jnu,inu);
+	  pnumunue[imatter]=nuox_osc_prob(jnu,inu);
 	  /* anti-neutrino oscillation */
 	  nuox_input_matrix_CKM(dm32,dm21,t12,t13,t23,delta);
 	  nuox_set_neutrino(l,e,-1);
@@ -247,7 +251,7 @@ double prob,probme,probem,probame,probaem;
  // plot_cp_violation(730.,2.8,(char*)("osc730_a.data"),NU_ELECTRON,NU_MUON,asin(sqrt(0.015)),90./180.0*PIGREEK);
  // plot_cp_violation(730.,2.8,(char*)("osc730_d.data"),NU_ELECTRON,NU_MUON,asin(sqrt(0.015)),-90./180.0*PIGREEK);
 
-  plot_osc_vs_l(2.8, (char*)("losc_test.data"), NU_ELECTRON,NU_ELECTRON);
+  plot_osc_vs_l(2.8, (char*)("losc_test.data"), NU_ELECTRON,NU_MUON);
 
 
 return 0;

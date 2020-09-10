@@ -1,6 +1,7 @@
 set(APPS
          test_neutrinoosc
-	 Nu_EarthCell)
+	 Nu_EarthCell
+	 Run_NuFlux_Simple)
 
 
 foreach(a ${APPS})
