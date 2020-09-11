@@ -59,6 +59,7 @@ DiscreteEarth::DiscreteEarth(double dcell){
 
 	  if(fabs(r - R_E) <= m_DCell){
 	    cell.Surf = true;
+	    m_SurfCellInd.push_back(Celli);
 	    SurfCell++;
 	  }else{
 	    cell.Surf = false;
@@ -225,17 +226,35 @@ void DiscreteEarth::SaveEarthToFile(const char * ofilename){
   outfile.close();
 
 }
-// latitude, longitude, flux
-void DiscreteEarth::SaveFluxToFile(const char * ofilename){
 
+
+// Saves output file in format: longitude  latitude , the flux value
+void DiscreteEarth::SaveFluxMap(const char * ofluxfilename){
+  cout << "Saving values to fixed coordinate (lat/lon) map: " << ofluxfilename << endl;
+
+  // Latitude (theta): -pi/2 - pi/2 (-90 - 90 degrees)
+  // Longitude (phi): 0 - 2*pi (0 - 360 degrees)
+
+  // Note: correspondence between theta and latitude: latitude = theta - pi/2
+
+  ofstream outfile;
+  outfile.open(ofluxfilename);
+  double x, y, z, r, theta, phi;
+
+  for(int i = 0; i < m_SurfCellInd.size();i++){
+    Cell_t cell = m_EarthCells[m_SurfCellInd[i]];
+    ToSpherical(cell.x, cell.y, cell.z, &r, &theta, &phi );
+    outfile << theta - PI/2 << "\t" << phi << "\t" << cell.a238U << endl;
+  }
+
+  outfile.close();
 
 }
 
-
 void DiscreteEarth::ToSpherical(double x, double y, double z, double * r, double * theta, double * phi){
   *r = sqrt(x*x + y*y + z*z);
-  *theta = acos(z/(*r));// check r if it is null?
-  *phi = atan(y/x);// check x if it is null?
+  *theta = acos(z/(*r));// returns [0, pi]
+  *phi = atan2(y,x) + PI; // returns [0,2pi]; atan2 alone returns [-pi, pi]
 }
 
 void DiscreteEarth::ToCartesian(double r, double theta, double phi, double * x, double * y, double * z){
@@ -283,10 +302,10 @@ Cell_t DiscreteEarth::GetSurfaceCell(double theta, double phi){
   
   Cell_t result;
   bool found = false;
-  for(unsigned int i = 0; i < m_NCells; i++){
+  for(unsigned int i = 0; i < m_SurfCellInd.size(); i++){
     // only print along x = 0, y = 0
-    if( m_EarthCells[i].Surf == true && fabs(m_EarthCells[i].x-x) <= m_DCell && fabs(m_EarthCells[i].y-y) <= m_DCell && fabs(m_EarthCells[i].z-z) <= m_DCell){
-      result = m_EarthCells[i];
+    if( m_EarthCells[m_SurfCellInd[i]].Surf == true && fabs(m_EarthCells[m_SurfCellInd[i]].x-x) <= m_DCell && fabs(m_EarthCells[m_SurfCellInd[i]].y-y) <= m_DCell && fabs(m_EarthCells[m_SurfCellInd[i]].z-z) <= m_DCell){
+      result = m_EarthCells[m_SurfCellInd[i]];
       found = true;
       break;
     }

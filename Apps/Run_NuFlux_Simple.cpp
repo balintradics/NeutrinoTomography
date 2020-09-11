@@ -18,7 +18,7 @@ Cell_t DiscreteEarth::m_Ocell;
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
-  DiscreteEarth d(100.0); // km cell size
+  DiscreteEarth d(300.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
@@ -26,7 +26,8 @@ int main(int argc, char * argv[]) {
 
   //  d.SaveActivityMap2DToFile();
   //  d.SaveCellsLongitudeToFile(PIGREEK*45.0/180.0);
-  d.SaveSurfaceCellsToFile();
+  //  d.SaveSurfaceCellsToFile();
+  d.SaveFluxMap();
 
 
   // We calculate the Neutrino Flux by summing over all cells

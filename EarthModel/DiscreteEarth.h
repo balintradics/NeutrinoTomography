@@ -59,6 +59,7 @@ const double ppm = 1e-06;
 const double ppb = 1e-09;
 const double amu = 1.661e-27; // kg
 const double lu = 1.0e-18; // [1/s]
+const double PI = 3.141592654;
 
 // Elemental compositions 
 struct Comp_t{
@@ -100,12 +101,16 @@ class DiscreteEarth {
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
 
+  // Functions to save projections or unstructured data formats
   void SaveActivityMap2DToFile(const char * ofilename = "activity_model.dat");
   void SaveCellsLongitudeToFile(double phi_fix, const char * ofilename = "activity_model_long.dat");
   void SaveSurfaceCellsToFile(const char * ofilename = "surface_cells.dat");
   void SaveEarthToFile(const char * ofilename = "earth_model.dat");
   void SaveDensityRToFile(const char * ofilename = "density.dat");
-  void SaveFluxToFile(const char * ofilename = "surf_flux.dat");// latitude, longitude, flux
+
+  // Utility function for plotting on fixed latitude/longitude grid
+  void SaveFluxMap(const char * ofluxfilename = "flux_map.dat");
+
 
   // Utility operators to compare cells
   bool IsEqual(Cell_t a, Cell_t b) const;
@@ -127,6 +132,7 @@ class DiscreteEarth {
   Cell_t * m_EarthCells;
   double m_DCell; // cell size
   int m_NCells; // number of cells
+  std::vector<int> m_SurfCellInd; // indices of surface cells
 
   // variables to aide the neutrino propagation between Earth Cells
   // Origin and Target
