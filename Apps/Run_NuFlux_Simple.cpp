@@ -18,7 +18,7 @@ Cell_t DiscreteEarth::m_Ocell;
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
-  DiscreteEarth d(300.0); // km cell size
+  DiscreteEarth d(500.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
