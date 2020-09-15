@@ -117,6 +117,11 @@ class DiscreteEarth {
   
   // For various Earth compositional models
   void SetUniformMantle(Comp_t comp);
+  // Set a particular Enriched Mantle model
+  void SetMantleP1();
+  // Set single enriched layer
+  void SetMantleEnrichedLayer(Comp_t comp, double deltaR, double latMin, double latMax, double lonMin, double lonMax );
+
 
   // For Neutrino propagation
   double SetOriginTarget(Cell_t ocell, Cell_t tcell);
@@ -130,9 +135,11 @@ class DiscreteEarth {
   // internally we represent the coordinates
   // with x, y, z Cartesian coordinates
   Cell_t * m_EarthCells;
+  Cell_t * m_SurfCells;
   double m_DCell; // cell size
-  int m_NCells; // number of cells
-  std::vector<int> m_SurfCellInd; // indices of surface cells
+  double m_DRad; // surface cell size
+  int m_NCells; // number of bulk cells
+  int m_NSurfCells; // number of surf cells
 
   // variables to aide the neutrino propagation between Earth Cells
   // Origin and Target

@@ -15,6 +15,8 @@ DiscreteEarth::DiscreteEarth(double dcell){
     cout << "Cell size is too small, to save memory resizing to 50 km" << endl;
     m_DCell = 50.0;
   }
+
+  m_DRad = m_DCell/R_E;
   
   // How many cells we need to fill the full Earth volume?
   // We calculate it dynamically...
@@ -26,7 +28,7 @@ DiscreteEarth::DiscreteEarth(double dcell){
       for(double iz = -R_E; iz <= R_E; iz = iz + m_DCell){
 	// skip cells that would be outside of the Earth volume
 	r = sqrt(ix*ix + iy*iy + iz*iz);
-	if(r > R_E){
+	if(r >= R_E){
 	}else{
 	  m_NCells++;
 	}
@@ -41,13 +43,12 @@ DiscreteEarth::DiscreteEarth(double dcell){
   // Now fill the values
   // Using hard-coded density values!
   int Celli = 0;
-  int SurfCell = 0;
   double rho_ret = 2.6 * 1000./1e-09; // g/cm3 -> kg/km3
   for(double ix = -R_E; ix <= R_E; ix = ix + m_DCell){
     for(double iy = -R_E; iy <= R_E; iy = iy + m_DCell){
       for(double iz = -R_E; iz <= R_E; iz = iz + m_DCell){
 	r = sqrt(ix*ix + iy*iy + iz*iz);
-	if(r > R_E){
+	if(r >= R_E){
 	}else{
 	  
 	  Cell_t cell;
@@ -56,14 +57,7 @@ DiscreteEarth::DiscreteEarth(double dcell){
 	  cell.x = ix;
 	  cell.y = iy;
 	  cell.z = iz;
-
-	  if(fabs(r - R_E) <= m_DCell){
-	    cell.Surf = true;
-	    m_SurfCellInd.push_back(Celli);
-	    SurfCell++;
-	  }else{
-	    cell.Surf = false;
-	  }
+	  cell.Surf = false;
 	  m_EarthCells[Celli] = cell;
 	  Celli++;
 	}
@@ -71,7 +65,37 @@ DiscreteEarth::DiscreteEarth(double dcell){
     }
   }
 
-  cout << "Allocated " << m_NCells << " cells, inclusive " << SurfCell << " surface cells" << endl;
+  // Separately store the Surface cells where we want uniform binning in theta/phi
+  m_NSurfCells = 0;
+  for(double itheta = 0; itheta <= PI; itheta = itheta + m_DRad){
+    for(double iphi = 0; iphi <= 2*PI; iphi = iphi + m_DRad){
+      m_NSurfCells++;
+    }
+  }
+
+  m_SurfCells = new Cell_t[m_NSurfCells];
+
+  double x, y, z;
+  int SurfCell = 0;
+  // Separately store the Surface cells where we want uniform binning in theta/phi
+  for(double itheta = 0; itheta <= PI; itheta = itheta + m_DRad){
+    for(double iphi = 0; iphi <= 2*PI; iphi = iphi + m_DRad){
+      Cell_t cell;
+      cell.Surf = true;
+      ToCartesian(R_E, itheta, iphi, &x, &y, &z);
+      rho_ret = Density(x, y,z);
+      cell.rho = rho_ret;
+      cell.x = x;
+      cell.y = y;
+      cell.z = z;
+      m_SurfCells[SurfCell] = cell;
+      //      m_SurfCellInd.push_back(Celli);
+      SurfCell++;
+    }
+  }
+
+
+  cout << "Allocated " << m_NCells << " cells, inclusive " << m_NSurfCells << " surface cells" << endl;
 
   // Set Atomic constants
   U238.X = 0.9927;
@@ -174,7 +198,7 @@ void DiscreteEarth::SaveActivityMap2DToFile(const char * ofilename){
   double r = 0;
   for(unsigned int i = 0; i < m_NCells; i++){
     // only save along x = 0
-    if( fabs(m_EarthCells[i].x) <= m_DCell && fabs(m_EarthCells[i].y) >= 0){
+    if( fabs(m_EarthCells[i].x) <= m_DCell){
       outfile  << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
     }
   }
@@ -187,11 +211,8 @@ void DiscreteEarth::SaveSurfaceCellsToFile(const char * ofilename){
     
   ofstream outfile;
   outfile.open(ofilename);
-  for(unsigned int i = 0; i < m_NCells; i++){
-    // only save if Surface
-    if(m_EarthCells[i].Surf){
-      outfile  << m_EarthCells[i].x << "\t" << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
-    }
+  for(unsigned int i = 0; i < m_NSurfCells; i++){
+    outfile  << m_SurfCells[i].x << "\t" << m_SurfCells[i].y << "\t" << m_SurfCells[i].z << "\t" << m_SurfCells[i].a238U <<  endl;
   }
   outfile.close();
 
@@ -228,7 +249,7 @@ void DiscreteEarth::SaveEarthToFile(const char * ofilename){
 }
 
 
-// Saves output file in format: longitude  latitude , the flux value
+// Example how to save output file in format: longitude  latitude , the flux/other value
 void DiscreteEarth::SaveFluxMap(const char * ofluxfilename){
   cout << "Saving values to fixed coordinate (lat/lon) map: " << ofluxfilename << endl;
 
@@ -241,10 +262,10 @@ void DiscreteEarth::SaveFluxMap(const char * ofluxfilename){
   outfile.open(ofluxfilename);
   double x, y, z, r, theta, phi;
 
-  for(int i = 0; i < m_SurfCellInd.size();i++){
-    Cell_t cell = m_EarthCells[m_SurfCellInd[i]];
+  for(int i = 0; i < m_NSurfCells;i++){
+    Cell_t cell = m_SurfCells[i];
     ToSpherical(cell.x, cell.y, cell.z, &r, &theta, &phi );
-    outfile << theta - PI/2 << "\t" << phi << "\t" << cell.a238U << endl;
+    outfile << -theta + PI/2 << "\t" << phi << "\t" << cell.a238U << endl;
   }
 
   outfile.close();
@@ -302,10 +323,9 @@ Cell_t DiscreteEarth::GetSurfaceCell(double theta, double phi){
   
   Cell_t result;
   bool found = false;
-  for(unsigned int i = 0; i < m_SurfCellInd.size(); i++){
-    // only print along x = 0, y = 0
-    if( m_EarthCells[m_SurfCellInd[i]].Surf == true && fabs(m_EarthCells[m_SurfCellInd[i]].x-x) <= m_DCell && fabs(m_EarthCells[m_SurfCellInd[i]].y-y) <= m_DCell && fabs(m_EarthCells[m_SurfCellInd[i]].z-z) <= m_DCell){
-      result = m_EarthCells[m_SurfCellInd[i]];
+  for(unsigned int i = 0; i < m_NSurfCells; i++){
+    if( fabs(m_SurfCells[i].x-x) <= m_DCell && fabs(m_SurfCells[i].y-y) <= m_DCell && fabs(m_SurfCells[i].z-z) <= m_DCell){
+      result = m_SurfCells[i];
       found = true;
       break;
     }
@@ -495,7 +515,55 @@ void DiscreteEarth::SetUniformMantle(Comp_t comp){
       m_EarthCells[i].a235U = comp.A_U*U235.X/U235.M;
       m_EarthCells[i].a232Th = comp.A_Th*Th232.X/Th232.M;
       m_EarthCells[i].a40K = comp.A_K*K40.X/K40.M;
+      //      cout << "R: " << r << "\t " << m_EarthCells[i].a238U << endl;
     }
+  }
+
+}
+
+
+// An idealized, single 1000 km thick pile 
+// with a lateral extent: Lat = 0 - 76 degrees
+void DiscreteEarth::SetMantleP1(){
+  // Enrichment factor E_X = A_X^{EM} / A_X^{DM}
+  // where A_X^{DM} is the normal Depleted Mantle composition
+  // A_X^{EM} is the enriched Mantle composition
+  
+  //Enriched Mantel composition from Arevalo and McDonough
+
+  double E_X_U = 6.3;
+  double E_X_Th = 12;
+
+  // Add first a uniform mantle 
+  SetUniformMantle(DepMantle);
+
+  // Overwrite the uniform mantle where enrichment is needed
+  Comp_t EnMantle = DepMantle;
+  EnMantle.A_U *= E_X_U;
+  EnMantle.A_Th *= E_X_Th;
+  SetMantleEnrichedLayer(EnMantle, 1000.0, 90.0*PI/180, 120*PI/180, 0.0*PI/180.0, 20*PI/180.0);
+
+  // In the internal coord. system: theta = 0 corresponds to upwards (in geography that's +90 Latitude)
+}
+
+// Set single enriched layer
+void DiscreteEarth::SetMantleEnrichedLayer(Comp_t comp, double deltaR, double latMin, double latMax, double lonMin, double lonMax ){
+
+  double r = 0;
+  double phi, theta;
+  for(unsigned int i = 0; i < m_NCells; i++){
+    ToSpherical(m_EarthCells[i].x, m_EarthCells[i].y, m_EarthCells[i].z, &r, &theta, &phi );
+    if(r >= R_LM && r <= (R_LM + deltaR) && 
+       (theta  )>= latMin && (theta ) <= latMax &&
+       phi >= lonMin && phi <= lonMax ){
+      m_EarthCells[i].a238U = comp.A_U*U238.X/U238.M;
+      m_EarthCells[i].a235U = comp.A_U*U235.X/U235.M;
+      m_EarthCells[i].a232Th = comp.A_Th*Th232.X/Th232.M;
+      m_EarthCells[i].a40K = comp.A_K*K40.X/K40.M;
+      //      cout << "R, Lat, long: " << r << "\t " << theta - PI/2 << "\t" << phi << "\t" << m_EarthCells[i].a238U << endl;
+
+    }
+
   }
 
 }

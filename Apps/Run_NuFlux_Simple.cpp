@@ -18,19 +18,17 @@ Cell_t DiscreteEarth::m_Ocell;
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
-  DiscreteEarth d(500.0); // km cell size
+  DiscreteEarth d(200.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
   d.SetUniformMantle(d.DepMantle);
+  //  d.SetMantleP1();
 
-  //  d.SaveActivityMap2DToFile();
-  //  d.SaveCellsLongitudeToFile(PIGREEK*45.0/180.0);
-  //  d.SaveSurfaceCellsToFile();
-  d.SaveFluxMap();
-
-
-  // We calculate the Neutrino Flux by summing over all cells
+  //d.SaveActivityMap2DToFile();
+  //d.SaveCellsLongitudeToFile(PIGREEK*45.0/180.0);
+  
+  // We calculate the total Neutrino Flux at a fixed position by summing over all cells
   // and simply evaluate the formula from O. Sramek et al.
   // Flux(r) = (nX * LambX/4pi) * <P> * \int aX(r')*rho(r')/(|r-r'|)^2 dr'
   // units: 1 * [1/s] * 1 * [1/kg] * [kg/m3] * m3 / m2 = [m2 / s]
@@ -59,7 +57,7 @@ int main(int argc, char * argv[]) {
   //[1/km5] * [km3] * [1] * [1/s] * [1] = [1/(km2*s)]
   FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb * meanProb / (4*PIGREEK);
 
-  std::cout << "Flux U238 : " << FluxU238 << " aneutrinos / (km2*s)" << " = " << FluxU238/(100000.*100000.*1.e+06) << " aneutrinos / (cm2*us) " <<  std::endl;
+  std::cout << "Total Flux U238 : " << FluxU238 << " aneutrinos / (km2*s)" << " = " << FluxU238/(100000.*100000.*1.e+06) << " aneutrinos / (cm2*us) " <<  std::endl;
 
   return 0;
 }
