@@ -39,7 +39,7 @@ int main(int argc, char * argv[]) {
   
   
   // Instantiate DiscreteEarth
-  DiscreteEarth d(100.0); // km cell size
+  DiscreteEarth d(500.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
@@ -71,6 +71,7 @@ int main(int argc, char * argv[]) {
   double FluxU238 = 0;
   double Prob = 1.0; 
   double dx, dy, dz, dr2;
+  
   for(unsigned int i = 0; i < d.m_NCells; i++){
     if(!d.IsEqual(d.m_EarthCells[i],s) &&
        d.m_EarthCells[i].a238U > 0){
@@ -78,14 +79,13 @@ int main(int argc, char * argv[]) {
       // and incrementally add a scaled difference vector to it,
       // until it reaches the target
       double Length = d.SetOriginTarget(d.m_EarthCells[i], s);
-
       /* neutrino prop in matter */
       nuox_set_propag_level(2,0);
       /* anti-neutrino oscillation */
       nuox_input_matrix_CKM(dm32,dm21,t12,t13,t23,delta);
       nuox_set_neutrino(Length,e,-1);
       Prob=nuox_osc_prob(NU_ELECTRON,NU_ELECTRON);
-
+      
       std::cout << "Probability: " << Prob << std::endl;
       FluxU238 += Prob * d.m_EarthCells[i].a238U * d.m_EarthCells[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
     }
