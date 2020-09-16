@@ -1,0 +1,23 @@
+# HTCondor queues
+# espresso     = 20 minutes, microcentury = 1 hour, longlunch    = 2 hours, workday      = 8 hours, tomorrow     = 1 day, testmatch    = 3 days, nextweek     = 1 week
+
+notify_user = balint.radics@cern.ch
+# Never, Error, Complete, Always
+notification = Always
+
+JOBNAME = NUPROB_LONGITUDE
+output = output/$(JOBNAME).$(ClusterId).$(ProcId).out
+error = error/$(JOBNAME).$(ClusterId).$(ProcId).err
+log = log/$(JOBNAME).$(ClusterId).$(ProcId).log
+send_credential = True
+
++JobFlavour = "tomorrow"
+
+executable = run_code.sh
+#arguments = run_ar39_new.mac $(JOBNAME)_$(ClusterId)_$(ProcId).root 10000
+
+queue
+
+#queue 10
+#queue arguments from arguments.txt
+

@@ -43,7 +43,6 @@ int main(int argc, char * argv[]) {
   double dm21=7.59e-5;
   double e = 0.003; // neutrino energy GeV
   
-  
   // Instantiate DiscreteEarth
   DiscreteEarth d(300.0); // km cell size
 
@@ -63,14 +62,16 @@ int main(int argc, char * argv[]) {
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
   double dtheta = d.m_DRad;
+  double theta_min = 0.0;
+  double theta_max = PIGREEK;
 
   cout << "Number of surface cells along latitude: " << (PIGREEK-0.0)/dtheta << endl;
 
   ofstream ofile;
-  ofile.open("NuProb_300km.txt");
+  ofile.open("NuProb_300km_long10deg.txt");
 
   // Loop over theta (latitude)
-  for(theta = 0.0; theta <= PIGREEK; theta = theta + dtheta){
+  for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
     
   
     Cell_t s = d.GetSurfaceCell(theta, l);
@@ -113,6 +114,57 @@ int main(int argc, char * argv[]) {
       }
     }
   }
+
+  
+  // Loop over theta (latitude + 180 degree to make a full circle)
+  l = l2;
+  for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
+    
+  
+    Cell_t s = d.GetSurfaceCell(theta, l);
+    d.PrintCell(s);
+    
+    // Get list of cells at a given Longitude
+    std::vector<Cell_t> cells = d.GetCellsLongitude(l);
+    
+    // Number of cells with non-zero activity
+    int Ncells = 0;
+    for(unsigned int i = 0; i < cells.size(); i++){
+      if(!d.IsEqual(cells[i],s) &&
+	 cells[i].a238U > 0){
+	Ncells++;
+      }
+    }
+    std::cout << "Total cells to evaluate: " << Ncells << std::endl;
+    
+
+    double Prob = 1.0; 
+    double dx, dy, dz, dr2;
+    // Loop over each cell in this slice
+    for(unsigned int i = 0; i < cells.size(); i++){
+      if(!d.IsEqual(cells[i],s) &&
+	 cells[i].a238U > 0){
+	// Then start from a vector pointing to the original cell
+	// and incrementally add a scaled difference vector to it,
+	// until it reaches the target
+	double Length = d.SetOriginTarget(cells[i], s);
+	
+	/* neutrino prop in matter */
+	nuox_set_propag_level(2,0);
+	/* anti-neutrino oscillation */
+	nuox_input_matrix_CKM(dm32,dm21,t12,t13,t23,delta);
+	nuox_set_neutrino(Length,e,-1);
+	Prob=nuox_osc_prob(NU_ELECTRON,NU_ELECTRON);
+
+	ofile << cells[i].x << "\t" << cells[i].y << "\t" << cells[i].z << "\t" << theta << "\t" << l << "\t" << Prob <<  endl;
+
+      }
+    }
+  }
+
+
+
+
 
   ofile.close();
 
