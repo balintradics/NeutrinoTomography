@@ -137,19 +137,20 @@ DiscreteEarth::~DiscreteEarth(){
 
 }
 
-// Outputs the list of cells lying in the plane of a longitude
-void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilename){
+// Get the normal vector to the plane of the Longitude
+// and return it conveniently packged as a Quaternion
+Quat4d_t DiscreteEarth::GetNormalToLongitude(double phi){
   // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
   // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
   // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
   
   // We pick 2 vectors in the plane
   double P0x, P0y, P0z; // given by the longitude
-  ToCartesian(R_E, 2.0, phi_fix, &P0x,&P0y, &P0z);
+  ToCartesian(R_E, 2.0, phi, &P0x,&P0y, &P0z);
   double P1x, P1y, P1z;
-  ToCartesian(R_E, 2.5, phi_fix, &P1x,&P1y, &P1z);
+  ToCartesian(R_E, 2.5, phi, &P1x,&P1y, &P1z);
   double P2x, P2y, P2z;
-  ToCartesian(R_E, 3.0, phi_fix, &P2x,&P2y, &P2z);
+  ToCartesian(R_E, 3.0, phi, &P2x,&P2y, &P2z);
 
   double v1x = P1x - P0x;
   double v1y = P1y - P0y;
@@ -167,7 +168,26 @@ void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilen
   nx /= nMag;
   ny /= nMag;
   nz /= nMag;
+
+  Quat4d_t normQ;
+  normQ.x = nx;
+  normQ.y = ny;
+  normQ.z = nz;
+  normQ.w = 0.0;
+
+  return normQ;
+
+}
+
+// Outputs the list of cells lying in the plane of a longitude
+void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilename){
   
+  Quat4d_t normQ = GetNormalToLongitude(phi_fix);
+
+  // A vector lying in the plane of the longitude
+  double P0x, P0y, P0z; // given by the longitude radial vector
+  ToCartesian(R_E, 2.0, phi_fix, &P0x,&P0y, &P0z);
+
   double dx, dy, dz, dMag;
   double prod = 0;
   ofstream outfile;
@@ -177,9 +197,9 @@ void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilen
     dx = (m_EarthCells[i].x - P0x);
     dy = (m_EarthCells[i].y - P0y);
     dz = (m_EarthCells[i].z - P0z);
-    dMag = sqrt(nx*nx + ny*ny + nz*nz);
+    dMag = sqrt(normQ.x*normQ.x + normQ.y*normQ.y + normQ.z*normQ.z);
     dx /= dMag; dy /= dMag; dz /= dMag;
-    prod = nx*dx + ny*dy + nz*dz;
+    prod = normQ.x*dx + normQ.y*dy + normQ.z*dz; // inner product between normal veector of plane and current cell
     //    std::cout << m_EarthCells[i].x << ", " << m_EarthCells[i].y << ", " << m_EarthCells[i].z << ": " << prod << std::endl;
     if( fabs(prod) <= 100 ){
       outfile  << m_EarthCells[i].x << "\t" << m_EarthCells[i].y << "\t" << m_EarthCells[i].z << "\t" << m_EarthCells[i].a238U <<  endl;
@@ -652,19 +672,18 @@ void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
 
   // Rotation Quaternion:
   Quat4d_t qr = ToRotQuaternion(rx, ry, rz, angle);
+  PrintQ(qr);
 
-  // make sure it is normalized
-  Quat4d_t qrn = NormaliseQ(qr);
-  
   // conjugate
-  Quat4d_t qrnc = ConjugateQ(qrn);
-  
+  Quat4d_t qrnc = ConjugateQ(qr);
+  PrintQ(qrnc);
+
   // Loop through all Earth Cells 
   for(int i = 0; i < m_NCells; i++){
     // Form Quaternion
     Quat4d_t qe = ToQuaternion(m_EarthCells[i].x, m_EarthCells[i].y, m_EarthCells[i].z);
     // Rotate
-    Quat4d_t q = MultiplyQ(qrn, qe);
+    Quat4d_t q = MultiplyQ(qr, qe);
     Quat4d_t q3 = MultiplyQ(q, qrnc);
     // Set the new coordinates of the Earth cells
     m_EarthCells[i].x = q3.x;
@@ -677,7 +696,7 @@ void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
     // Form Quaternion
     Quat4d_t qe = ToQuaternion(m_SurfCells[i].x, m_SurfCells[i].y, m_SurfCells[i].z);
     // Rotate
-    Quat4d_t q = MultiplyQ(qrn, qe);
+    Quat4d_t q = MultiplyQ(qr, qe);
     Quat4d_t q3 = MultiplyQ(q, qrnc);
     // Set the new coordinates of the Surf cells
     m_SurfCells[i].x = q3.x;

@@ -6,7 +6,8 @@ set(APPS
 	 Run_NuFlux_SimpleLongitude
 	 Run_NuFlux_Osc
 	 Run_NuFlux_OscLongitude
-	 Run_NuProb_OscLongitude)
+	 Run_NuProb_OscLongitude
+	 RotateEarth)
 
 
 foreach(a ${APPS})
