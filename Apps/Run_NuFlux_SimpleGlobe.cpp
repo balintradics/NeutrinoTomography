@@ -25,7 +25,7 @@ int main(int argc, char * argv[]) {
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
-  //  d.SetUniformMantle(d.DepMantle);
+  // d.SetUniformMantle(d.DepMantle);
   d.SetMantleP1();
   
   d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
@@ -44,7 +44,7 @@ int main(int argc, char * argv[]) {
   // cout << "0, 0, 6700: " << r << "\t" << theta << "\t" << phi << endl;
 
   ofstream outfile;
-  outfile.open("Flux_map.dat");
+  outfile.open("Flux_map_pointmantle.dat");
   double TotFluxU238 = 0;
   // Loop over all Surface cell
   for(int i = 0; i < d.m_NSurfCells;i++){

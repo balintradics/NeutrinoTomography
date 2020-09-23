@@ -3,6 +3,7 @@ set(APPS
 	 Nu_EarthCell
 	 Run_NuFlux_Simple
 	 Run_NuFlux_SimpleGlobe
+	 Run_NuFlux_SimpleLongitude
 	 Run_NuFlux_Osc
 	 Run_NuFlux_OscLongitude
 	 Run_NuProb_OscLongitude)
