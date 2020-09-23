@@ -567,3 +567,71 @@ void DiscreteEarth::SetMantleEnrichedLayer(Comp_t comp, double deltaR, double la
   }
 
 }
+
+// Quaternion algebra for 3D rotation about arbitrary axis
+Quat4d_t DiscreteEarth::ToQuaternion(double x, double y, double z){
+  Quat4d_t q;
+  q.x = x;
+  q.y = y;
+  q.z = z;
+  q.w = 0.0;
+  return q;
+}
+
+
+// Rotation quaternion should be based on normalized components
+Quat4d_t DiscreteEarth::ToRotQuaternion(double x, double y, double z, double angle){
+  Quat4d_t q;
+  double s = sin(angle/2.0);
+  q.x = x * s;
+  q.y = y * s;
+  q.z = z * s;
+  q.w = cos(angle/2);
+  return q;
+}
+
+
+Quat4d_t DiscreteEarth::ConjugateQ(Quat4d_t q1){
+  Quat4d_t qc;
+  qc.x = -q1.x;
+  qc.y = -q1.y;
+  qc.z = -q1.z;
+  qc.w = q1.w;
+  return qc;
+
+}
+
+Quat4d_t DiscreteEarth::NormaliseQ(Quat4d_t q1){
+  Quat4d_t qn;
+  double n = sqrt(q1.x*q1.x + q1.y*q1.y + q1.z*q1.z);
+  qn.x = q1.x / n;
+  qn.y = q1.y / n;
+  qn.z = q1.z / n;
+  qn.w = q1.w / n;
+  return qn;
+}
+
+
+Quat4d_t DiscreteEarth::ScaleQ(Quat4d_t q1, double s){
+  Quat4d_t qs;
+  qs.x = q1.x * s;
+  qs.y = q1.y * s;
+  qs.z = q1.z * s;
+  qs.w = q1.w * s;
+  return qs;
+
+}
+
+Quat4d_t DiscreteEarth::MultiplyQ(Quat4d_t q1, Quat4d_t q2){
+  Quat4d_t qm;
+  qm.x =  q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+  qm.y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
+  qm.z =  q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+  qm.w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
+  return qm;
+}
+
+// Rotate all cells of Earth by theta angle around an qxis
+void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
+
+}

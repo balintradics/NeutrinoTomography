@@ -47,8 +47,6 @@ struct AtomConst_t{
   double Mnu; // Number of e- antineutrinos per chain
 };
 
-
-
 // constants related to Earth
 // from PREM model: Physics of the Earth and Planetary Interiors, 25 (1981) 297—356
 const double R_E=6371.; // Earth radius in Km
@@ -80,6 +78,16 @@ struct Cell_t{
   double a40K; // rel. abundance of 40K rad. isotope
   bool Surf; // indicate wether this cell is a surface cell
 };
+
+
+// Quaternion structure for 3D rotations
+struct Quat4d_t{
+  double x;// x
+  double y;// y
+  double z;// z
+  double w;// angle
+};
+
   
 // Spherical coordinate system
 // r, theta (polar), phi (azimuth)
@@ -130,6 +138,18 @@ class DiscreteEarth {
   // needs to be static in order to be callable from external sources
   static double Density(double x, double y, double z);
   static double DensityAlong(double s); 
+
+  // Quaternion algebra for 3D rotation about arbitrary axis
+  Quat4d_t ToQuaternion(double x, double y, double z);
+  Quat4d_t ToRotQuaternion(double x, double y, double z, double angle);
+  Quat4d_t ConjugateQ(Quat4d_t q1);
+  Quat4d_t NormaliseQ(Quat4d_t q1);
+  Quat4d_t ScaleQ(Quat4d_t q1, double s);
+  Quat4d_t MultiplyQ(Quat4d_t q1, Quat4d_t q2);
+
+  // Rotate all cells of Earth by theta angle around an qxis
+  void RotateEarth(double angle, double rx, double ry, double rz);
+
 
  public:
   // internally we represent the coordinates

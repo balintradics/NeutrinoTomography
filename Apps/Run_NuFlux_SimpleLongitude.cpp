@@ -67,7 +67,7 @@ int main(int argc, char * argv[]) {
 
 
     // Rotate Earth around axis given by the normal to the longitudinal plane
-    d.RotateEarth(dtheta, l);
+    d.RotateEarth(dtheta, 0, 0, 0);
 
     // Pick a cell as a reference vector pointing to the local plane of the detector
     Cell_t loc_det = d.GetSurfaceCell(theta, l);
