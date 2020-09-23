@@ -146,6 +146,7 @@ class DiscreteEarth {
   Quat4d_t NormaliseQ(Quat4d_t q1);
   Quat4d_t ScaleQ(Quat4d_t q1, double s);
   Quat4d_t MultiplyQ(Quat4d_t q1, Quat4d_t q2);
+  void PrintQ(Quat4d_t q1);
 
   // Rotate all cells of Earth by theta angle around an qxis
   void RotateEarth(double angle, double rx, double ry, double rz);

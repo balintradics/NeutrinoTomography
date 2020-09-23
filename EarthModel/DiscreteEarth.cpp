@@ -631,7 +631,59 @@ Quat4d_t DiscreteEarth::MultiplyQ(Quat4d_t q1, Quat4d_t q2){
   return qm;
 }
 
-// Rotate all cells of Earth by theta angle around an qxis
+void DiscreteEarth::PrintQ(Quat4d_t q1){
+  std::cout << "Quaternion: " << std::endl;
+  std::cout << "\t x: " << q1.x << std::endl;
+  std::cout << "\t y: " << q1.y << std::endl;
+  std::cout << "\t z: " << q1.z << std::endl;
+  std::cout << "\t w: " << q1.w << std::endl;
+  std::cout << "\t Norm: " << sqrt(q1.x*q1.x+q1.y*q1.y+q1.z*q1.z + q1.w*q1.w) << std::endl;
+}
+
+// Rotate all cells of Earth by theta angle around an axis, rotation vector (rx, ry, rz) must be normalized
 void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
+
+  // Rotation by Quaternion algebra:
+  // rotate a vector "p" by angle "angle" around a (unit) axis "r"
+  // Form Quaterniin: q1 = (px, py, pz, 0)
+  // Form unit rotation Quaternion: q2 = (rx*sin(angle/2), ry*sin(angle/2), rz*sin(angle/2), cos(angle/2))
+  // Forward rotated Quaternion: Q3 = q2 * q1 * q2^{*}  
+  // Backward rotated Quaternion: Q3 = q2^{*} * q1 * q2 
+
+  // Rotation Quaternion:
+  Quat4d_t qr = ToRotQuaternion(rx, ry, rz, angle);
+
+  // make sure it is normalized
+  Quat4d_t qrn = NormaliseQ(qr);
+  
+  // conjugate
+  Quat4d_t qrnc = ConjugateQ(qrn);
+  
+  // Loop through all Earth Cells 
+  for(int i = 0; i < m_NCells; i++){
+    // Form Quaternion
+    Quat4d_t qe = ToQuaternion(m_EarthCells[i].x, m_EarthCells[i].y, m_EarthCells[i].z);
+    // Rotate
+    Quat4d_t q = MultiplyQ(qrn, qe);
+    Quat4d_t q3 = MultiplyQ(q, qrnc);
+    // Set the new coordinates of the Earth cells
+    m_EarthCells[i].x = q3.x;
+    m_EarthCells[i].y = q3.y;
+    m_EarthCells[i].z = q3.z;
+  }
+
+  // Loop through all Surface Cells
+  for(int i = 0; i < m_NSurfCells; i++){
+    // Form Quaternion
+    Quat4d_t qe = ToQuaternion(m_SurfCells[i].x, m_SurfCells[i].y, m_SurfCells[i].z);
+    // Rotate
+    Quat4d_t q = MultiplyQ(qrn, qe);
+    Quat4d_t q3 = MultiplyQ(q, qrnc);
+    // Set the new coordinates of the Surf cells
+    m_SurfCells[i].x = q3.x;
+    m_SurfCells[i].y = q3.y;
+    m_SurfCells[i].z = q3.z;
+  }
+
 
 }
