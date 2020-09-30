@@ -28,3 +28,9 @@ $ make
 Example apps:
  * `Run_NuFlux_Simple.cpp` : setup of a simplified, uniform Mantle radiogenic model, and fast calculation of antineutrino flux from 238U at a given surface position integrating over the whole planet
  * `Run_NuFlux_OscLongitude.cpp` : setup of a simplified, uniform Mantle radiogenic model, and fully oscillated calculation of directed antineutrino flux from 238U at a given surface position from a plane at a given Longitude
+
+## Example global antineutrino flux from 238U
+
+* An example Discretize Earth model based global antrineutrino flux calculation. The excess radioactive 238U isotopes are distributed under Africa, at the bottom of the Mantle. The colour values show the percentage change with respect to a nominal global antineutrino flux model.
+
+![Antineutrino flux from a U238 activity model](/Images/Antinu_FluxU238_dummy.png)
