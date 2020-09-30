@@ -179,6 +179,49 @@ Quat4d_t DiscreteEarth::GetNormalToLongitude(double phi){
 
 }
 
+
+void DiscreteEarth::GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d_t * basis2){
+
+  // Rotation by Quaternion algebra:
+  // rotate a vector "p" by angle "angle" around a (unit) axis "r"
+  // Form Quaterniin: q1 = (px, py, pz, 0)
+  // Form unit rotation Quaternion: q2 = (rx*sin(angle/2), ry*sin(angle/2), rz*sin(angle/2), cos(angle/2))
+  // Forward rotated Quaternion: Q3 = q2 * q1 * q2^{*}  
+  // Backward rotated Quaternion: Q3 = q2^{*} * q1 * q2 
+
+  // Rotation axis is z - axis if rotate only by Longitude
+  // Rotation Quaternion:
+  Quat4d_t qr = ToRotQuaternion(0, 0, 1, phi);
+  //  PrintQ(qr);
+
+  // conjugate
+  Quat4d_t qrnc = ConjugateQ(qr);
+  //  PrintQ(qrnc);
+
+  // We want to rotate the x axes into the longitude plane
+  Quat4d_t qe = ToQuaternion(1.0, 0.0, 0.0);
+
+  // do the rotation
+  Quat4d_t q = MultiplyQ(qr, qe);
+  Quat4d_t q3 = MultiplyQ(q, qrnc);
+
+  // The rotate x - basis vector
+  (*basis1).x = q3.x;
+  (*basis1).y = q3.y;
+  (*basis1).z = q3.z;
+  (*basis1).w = 0.0;
+
+  // This should be just the z - basis vector
+  // We rotate around the z axis
+  (*basis2).x = 0;
+  (*basis2).y = 0;
+  (*basis2).z = 1;
+  (*basis2).w = 0.0;
+
+  return;
+
+}
+
 // Outputs the list of cells lying in the plane of a longitude
 void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilename){
   
@@ -410,7 +453,7 @@ std::vector<Cell_t> DiscreteEarth::GetCellsLongitude(double phi_fix){
   
   double dx, dy, dz, dMag;
   double prod = 0;
-  ofstream outfile;
+
   std::vector<Cell_t> cell_vec;
   for(unsigned int i = 0; i < m_NCells; i++){
     // only save cells that lie in the (vicinity of the) plane
@@ -427,6 +470,28 @@ std::vector<Cell_t> DiscreteEarth::GetCellsLongitude(double phi_fix){
   }
   
   return cell_vec;
+
+}
+
+
+std::vector<Cell_t> DiscreteEarth::GetSurfaceCellsLongitude(double phi_fix){
+  // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
+  // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
+  // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
+  
+  std::vector<Cell_t> cell_vec;
+  double r, theta, phi;
+  for(unsigned int i = 0; i < m_NSurfCells; i++){
+    // only save cells that lie in the (vicinity of the) plane
+    ToSpherical(m_SurfCells[i].x, m_SurfCells[i].y, m_SurfCells[i].z, &r, &theta, &phi);
+    if( fabs(phi - phi_fix) < m_DRad/2.0 || fabs(phi - (phi_fix+PI)) < m_DRad/2.0){
+      cell_vec.push_back(m_SurfCells[i]);
+    }
+  }
+  
+  return cell_vec;
+
+
 
 }
 
@@ -672,11 +737,11 @@ void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
 
   // Rotation Quaternion:
   Quat4d_t qr = ToRotQuaternion(rx, ry, rz, angle);
-  PrintQ(qr);
+  // PrintQ(qr);
 
   // conjugate
   Quat4d_t qrnc = ConjugateQ(qr);
-  PrintQ(qrnc);
+  //  PrintQ(qrnc);
 
   // Loop through all Earth Cells 
   for(int i = 0; i < m_NCells; i++){

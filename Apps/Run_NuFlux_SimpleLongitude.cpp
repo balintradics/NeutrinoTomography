@@ -27,6 +27,12 @@ int main(int argc, char * argv[]) {
   // this is done by the DiscreteEarth class
   //  d.SetUniformMantle(d.DepMantle);
   d.SetMantleP1();
+
+  // Prepare output file
+  ofstream outfile;
+  //outfile.open("Sinogram_uniformmantle.dat");
+  outfile.open("Sinogram_pointmantle.dat");
+
   
   //  d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
   //d.SaveSurfaceCellsToFile();
@@ -42,21 +48,33 @@ int main(int argc, char * argv[]) {
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
-  double dtheta = PIGREEK/180.0;
+  double dtheta = PIGREEK/180.0;//d.m_DRad/2.0;
   double theta_min = 0.0;
   double theta_max = PIGREEK;
 
+  cout << "Total number of rotations: " << (theta_max - theta_min)/dtheta << endl;
 
-  cout << "Number of surface cells along latitude: " << (PIGREEK-0.0)/dtheta << endl;
+  // Get list of surface cells along longitude - in unrotated coordinates!
+  std::vector<Cell_t> surfCells_Long = d.GetSurfaceCellsLongitude(l);
 
-  ofstream outfile;
-  //  outfile.open("Sinogram_uniformmantle.dat");
-  outfile.open("Sinogram_pointmantle.dat");
+
 
   // Prototype of Radon transform: 
-  // - rotate the detector around the patient
-  // - collect the 'rays' in a plane for each angle
+  // - rotate patient and keep the detector fixed 
+  // - collect the 'collimated rays' in a plane for each angle
 
+  // Get axis of rotation as a normal vector of the plane of the Longitude
+  Quat4d_t normQ = d.GetNormalToLongitude(l);
+
+  // Get detector plane coordinate system's basis vectors
+  Quat4d_t basis1;
+  Quat4d_t basis2;
+  d.GetLongitudePlaneBasis(l, &basis1, &basis2);
+
+  cout << "Detector Basis1: " << endl;
+  d.PrintQ(basis1);
+  cout << "Detector Basis2: " << endl;
+  d.PrintQ(basis2);
 
   // Rotating the Earth
   // Loop over theta (latitude)
@@ -65,85 +83,35 @@ int main(int argc, char * argv[]) {
     if(int(theta*180.0/PIGREEK) % 10 == 0)
       cout << "Rotation: " << theta*180.0/PIGREEK << endl;
 
-
     // Rotate Earth around axis given by the normal to the longitudinal plane
-    d.RotateEarth(dtheta, 0, 0, 0);
+    d.RotateEarth(dtheta, normQ.x, normQ.y, normQ.z);
 
-    // Pick a cell as a reference vector pointing to the local plane of the detector
-    Cell_t loc_det = d.GetSurfaceCell(theta, l);
-
-    //    d.PrintCell(loc_det);
-    double mag_loc_det = sqrt(loc_det.x*loc_det.x + loc_det.y*loc_det.y + loc_det.z*loc_det.z);// this should be R_e
     // We need to calculate:
-    // - Flux vectors with direction parallel to the vector pointing to this cell (collimator approx)
-    // - Coordinate of the flux in the local coordinate system of the local plane (inner product with the tangent vector)
+    // - Flux vectors with direction parallel to the detector coordinate basis1 vector (collimator approx)
+    // - Coordinate of the flux in the detector coordinate system of the longitude's plane (inner product with the basis vector)
 
-    // Loop over all cells along the longitude to collect all 
-    // Get list of cells at a given Longitude and theta
-    // theta above is taken as center of detector so, we need to go from theta - 90 to theta + 90 degrees
-    // But since theta goes from 0 to 180 only, we do this in 2 steps:
-    // First 0 to thetamax, then remaining with the 180 degree shifted part
-    double theta_l_min = theta - PIGREEK/2.; 
-    double theta_l_max = theta + PIGREEK/2.;
-    
-    for(double theta_l = 0; theta_l <= theta_l_max; theta_l = theta_l + dtheta){
-      Cell_t s = d.GetSurfaceCell(theta_l, l);
+    // Loop over all cells along the longitude to collect all
+    for(int is = 0; is < surfCells_Long.size(); is++){
+      // Current cell for which we calculate the flux
+      Cell_t s = surfCells_Long[is];
 
-      // Need to calculate the position of this event in the local (rotated) detector coordinate
-      // We create a normalized vector in the local detector plane, which is also in the longitude's plane.
-
-      // 1. We need first a normal vector in the longitude's plane
-      // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
-      // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
-      // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
+      // only check half circle
+      double rc, thetac, phic;
+      d.ToSpherical(s.x, s.y, s.z, &rc, &thetac, &phic);
+      //  cout << l << ", " << phic << ", " << d.m_DRad << endl;
+      if( fabs(phic-(l+PIGREEK)) > d.m_DRad)
+       	continue;
       
-      // We pick 2 vectors in the plane
-      double P0x, P0y, P0z; // given by the longitude
-      d.ToCartesian(R_E, 2.0, l, &P0x,&P0y, &P0z);
-      double P1x, P1y, P1z;
-      d.ToCartesian(R_E, 2.5, l, &P1x,&P1y, &P1z);
-      double P2x, P2y, P2z;
-      d.ToCartesian(R_E, 3.0, l, &P2x,&P2y, &P2z);
-
-      double v1x = P1x - P0x;
-      double v1y = P1y - P0y;
-      double v1z = P1z - P0z;
-      double v2x = P2x - P0x;
-      double v2y = P2y - P0y;
-      double v2z = P2z - P0z;
-      
-      // The cross product will give a vector orthogonal to the plane
-      double nx, ny, nz;
-      nx = v1y*v2z - v1z*v2y;
-      ny = v1z*v2x - v1x*v2z;
-      nz = v1x*v2y - v1y*v2x;
-      double nMag = sqrt(nx*nx + ny*ny + nz*nz);
-      nx /= nMag;
-      ny /= nMag;
-      nz /= nMag;
-      
-      // 2. We take the cross product of this normal vector with the vector pointing to the local detector point
-      double detpl_tan_x, detpl_tan_y, detpl_tan_z;
-      detpl_tan_x = ny*loc_det.z - nz*loc_det.y;
-      detpl_tan_y = nz*loc_det.x - nx*loc_det.z;
-      detpl_tan_z = nx*loc_det.y - ny*loc_det.x;
-      double detpl_tan_mag = sqrt(detpl_tan_x*detpl_tan_x + detpl_tan_y*detpl_tan_y + detpl_tan_z*detpl_tan_z);
-      detpl_tan_x /= detpl_tan_mag;
-      detpl_tan_y /= detpl_tan_mag;
-      detpl_tan_z /= detpl_tan_mag;
-
-      // 3. We take the inner product of the det plane tangent vec with the current surface cell's vector where flux is calculated
-      // which should give the local coordinate in the (rotated) detector plane
-      double local_coord = detpl_tan_x*s.x + detpl_tan_y*s.y + detpl_tan_z*s.z;
-
+      // Need to calculate the position of this point in the fixed detector coordinate system
+      double local_coord = s.x * basis2.x + s.y * basis2.y + s.z * basis2.z;
 
       double FluxU238 = 0; // unit: 
       double meanProb = 0.544; 
       double dx, dy, dz, dr2, mag_d, prod, cos_theta;
+      // This gives the already rotated cells!
       std::vector<Cell_t> cells_l = d.GetCellsLongitude(l);
       for(unsigned int i = 0; i < cells_l.size(); i++){
-	if(!d.IsEqual(cells_l[i],s) &&
-	   cells_l[i].a238U > 0){
+	if(!d.IsEqual(cells_l[i],s)){
 	  // vectorial difference
 	  dx = s.x - cells_l[i].x;
 	  dy = s.y - cells_l[i].y;
@@ -151,10 +119,10 @@ int main(int argc, char * argv[]) {
 	  dr2 = dx*dx + dy*dy + dz*dz;
 	  mag_d = sqrt(dr2);
 	  // Collimator approximation: only accept neutrinos that are parallel
-	  // with the local detector's plane normal vector (the vector pointing to the longitude plane)
+	  // with the detector axis 
 	  // u*v = |u|*|v|*cos(theta)
-	  prod = dx*loc_det.x+dy*loc_det.y+dz*loc_det.z;
-	  cos_theta = prod/(mag_loc_det*mag_d);
+	  prod = dx*basis1.x+dy*basis1.y+dz*basis1.z;
+	  cos_theta = prod/(1*mag_d);
 
 	  if(fabs(cos_theta - 1.0) < 0.01){
 	    FluxU238 += cells_l[i].a238U * cells_l[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
@@ -164,94 +132,10 @@ int main(int argc, char * argv[]) {
       // apply constants
       //[1/km5] * [km3] * [1] * [1/s] * [1] = [1/(km2*s)]
       FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb * meanProb / (4*PIGREEK);
-      // cout << theta << "\t" << theta_l*180/PIGREEK << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
+
       outfile << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
+      //      cout << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
     }
-
-    for(double theta_l = theta_l_min; theta_l <= 0; theta_l = theta_l + dtheta){
-      Cell_t s = d.GetSurfaceCell(theta_l, l);
-
-      // Need to calculate the position of this event in the local (rotated) detector coordinate
-      // We create a normalized vector in the local detector plane, which is also in the longitude's plane.
-
-      // 1. We need first a normal vector in the longitude's plane
-      // Let vec(P0) = (P0x, P0y, P0z) be a point given in the plane of the longitude
-      // let vec(n) = (nx, ny, nz) an orthogonal vector to this plane
-      // then vec(P) = (Px, Py, Pz) will be in the plane if (vec(P) - vec(P0)) * vec(n) = 0
-      
-      // We pick 2 vectors in the plane
-      double P0x, P0y, P0z; // given by the longitude
-      d.ToCartesian(R_E, 2.0, l, &P0x,&P0y, &P0z);
-      double P1x, P1y, P1z;
-      d.ToCartesian(R_E, 2.5, l, &P1x,&P1y, &P1z);
-      double P2x, P2y, P2z;
-      d.ToCartesian(R_E, 3.0, l, &P2x,&P2y, &P2z);
-
-      double v1x = P1x - P0x;
-      double v1y = P1y - P0y;
-      double v1z = P1z - P0z;
-      double v2x = P2x - P0x;
-      double v2y = P2y - P0y;
-      double v2z = P2z - P0z;
-      
-      // The cross product will give a vector orthogonal to the plane
-      double nx, ny, nz;
-      nx = v1y*v2z - v1z*v2y;
-      ny = v1z*v2x - v1x*v2z;
-      nz = v1x*v2y - v1y*v2x;
-      double nMag = sqrt(nx*nx + ny*ny + nz*nz);
-      nx /= nMag;
-      ny /= nMag;
-      nz /= nMag;
-      
-      // 2. We take the cross product of this normal vector with the vector pointing to the local detector point
-      double detpl_tan_x, detpl_tan_y, detpl_tan_z;
-      detpl_tan_x = ny*loc_det.z - nz*loc_det.y;
-      detpl_tan_y = nz*loc_det.x - nx*loc_det.z;
-      detpl_tan_z = nx*loc_det.y - ny*loc_det.x;
-      double detpl_tan_mag = sqrt(detpl_tan_x*detpl_tan_x + detpl_tan_y*detpl_tan_y + detpl_tan_z*detpl_tan_z);
-      detpl_tan_x /= detpl_tan_mag;
-      detpl_tan_y /= detpl_tan_mag;
-      detpl_tan_z /= detpl_tan_mag;
-
-      // 3. We take the inner product of the det plane tangent vec with the current surface cell's vector where flux is calculated
-      // which should give the local coordinate in the (rotated) detector plane
-      double local_coord = detpl_tan_x*s.x + detpl_tan_y*s.y + detpl_tan_z*s.z;
-
-
-      double FluxU238 = 0; // unit: 
-      double meanProb = 0.544; 
-      double dx, dy, dz, dr2, mag_d, prod, cos_theta;
-      std::vector<Cell_t> cells_l = d.GetCellsLongitude(l);
-      for(unsigned int i = 0; i < cells_l.size(); i++){
-	if(!d.IsEqual(cells_l[i],s) &&
-	   cells_l[i].a238U > 0){
-	  // vectorial difference
-	  dx = s.x - cells_l[i].x;
-	  dy = s.y - cells_l[i].y;
-	  dz = s.z - cells_l[i].z;
-	  dr2 = dx*dx + dy*dy + dz*dz;
-	  mag_d = sqrt(dr2);
-	  // Collimator approximation: only accept neutrinos that are parallel
-	  // with the local detector's plane normal vector (the vector pointing to the longitude plane)
-	  // u*v = |u|*|v|*cos(theta)
-	  prod = dx*loc_det.x+dy*loc_det.y+dz*loc_det.z;
-	  cos_theta = prod/(mag_loc_det*mag_d);
-
-	  if(fabs(cos_theta - 1.0) < 0.01){
-	    FluxU238 += cells_l[i].a238U * cells_l[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
-	  }
-	}
-      }
-      // apply constants
-      //[1/km5] * [km3] * [1] * [1/s] * [1] = [1/(km2*s)]
-      FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb * meanProb / (4*PIGREEK);
-      //      cout << theta << "\t" << theta_l*180/PIGREEK << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
-      outfile << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
-    }
-
-
-
 
 
   }

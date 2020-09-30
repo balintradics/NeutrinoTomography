@@ -105,7 +105,9 @@ class DiscreteEarth {
   Cell_t GetSurfaceCell(double theta, double phi);
   Cell_t GetCell(double x, double y, double z);
   std::vector<Cell_t> GetCellsLongitude(double phi_fix);
+  std::vector<Cell_t> GetSurfaceCellsLongitude(double phi_fix);
   Quat4d_t GetNormalToLongitude(double phi);
+  void GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d_t * basis2); 
 
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
