@@ -8,7 +8,8 @@ set(APPS
 	 Run_NuFlux_OscLongitude
 	 Run_NuProb_OscLongitude
 	 RotateEarth
-	 Print_SurfaceCells_Long)
+	 Print_SurfaceCells_Long
+	 Run_CalcOscProb_Cell)
 
 
 foreach(a ${APPS})

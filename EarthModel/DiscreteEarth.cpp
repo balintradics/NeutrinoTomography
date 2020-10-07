@@ -1,6 +1,8 @@
 #include "math.h"
 #include "stdlib.h"
 #include <time.h> 
+#include <cstdlib> 
+#include <ctime>
 #include "iostream"
 #include "fstream"
 
@@ -127,7 +129,8 @@ DiscreteEarth::DiscreteEarth(double dcell){
   DepMantle.A_Th = 22*ppb;// +/- 4 ppb
   DepMantle.A_K = 152*ppm;// +/- 30 ppm
   
-
+  // set initial seed value to system clock
+  srand( time(NULL) );
   
 }
 
@@ -517,14 +520,6 @@ double DiscreteEarth::SetOriginTarget(Cell_t ocell, Cell_t tcell){
   // Set the length
   m_PathLength = sqrt(m_Dx*m_Dx + m_Dy*m_Dy + m_Dz*m_Dz);
 
-  // We have to pre-calculate the array of Cells that the
-  // neutrino will traverse (otherwise we would need to loop over
-  // O(million) cell at each step, which is not efficient)
-  double x0,y0,z0;
-  x0 = m_Ocell.x;
-  y0 = m_Ocell.y;
-  z0 = m_Ocell.z;
-
   return m_PathLength;
 
 }
@@ -769,5 +764,89 @@ void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){
     m_SurfCells[i].z = q3.z;
   }
 
+
+}
+
+void DiscreteEarth::ReadOscProb(const char * infilename){
+
+  ifstream infile;
+  infile.open(infilename);
+  double x, y, z, theta, phi, prob;
+  while(1){
+    infile >> x >> y >> z >> theta >> phi >> prob;
+    if(!infile.good())break;
+    m_Px.push_back(x);
+    m_Py.push_back(y);
+    m_Pz.push_back(z);
+    m_Ptheta.push_back(theta);
+    m_Pphi.push_back(phi);
+    m_Prob.push_back(prob);
+  }
+
+  cout << "Read " << m_Px.size() << " probabilty values from file "  << infilename << endl;
+
+
+}
+
+
+
+
+// Get oscillation probability between surface cell at {theta, phi} and an Earth Cell {x, y, z}
+// if it is not found then do calculate it
+double DiscreteEarth::GetOscProb(double theta_surf, double phi_surf, double x_cell, double y_cell, double z_cell){
+  
+  double osc_prob = 0.544; // mean probability from Earth and Planetary Science Letters 361 (2013) 356-366
+  double eps = m_DCell/2.0;
+  double epsr = m_DRad/2.0;
+  bool found = false;
+  // Find nearest neighbour...
+  double x, y, z, theta, phi;
+  for(unsigned int i = 0; i < m_Px.size(); i++){
+    
+    if ( fabs(m_Px[i] - x_cell) < eps && 
+	 fabs(m_Py[i] - y_cell) < eps && 
+	 fabs(m_Pz[i] - z_cell) < eps && 
+	 fabs(m_Ptheta[i] - theta_surf) < epsr  && 
+	 fabs(m_Pphi[i] - phi_surf) < epsr ){
+      osc_prob = m_Prob[i];
+      x = m_Px[i];
+      y = m_Py[i];
+      z = m_Pz[i];
+      theta = m_Ptheta[i];
+      phi = m_Pphi[i];
+      found = true;
+      break;
+    }
+  }
+
+  if(found){
+    cout << "Yaayy! : "  << x << ", " << y << ", " << z << ";;; " << theta << ", " << phi << " ;;; " << osc_prob << endl;
+    return osc_prob;
+  }else{
+    return -1;
+  }
+
+  return osc_prob;
+
+
+}
+
+void DiscreteEarth::WriteOscProb(double theta_surf, double phi_surf, double x_cell, double y_cell, double z_cell, double prob){
+
+  cout << "Writing source/target/prob: " << x_cell << ", " << y_cell << ", " << z_cell << ", " << theta_surf << ", " << phi_surf << " ;;; " << prob << endl;
+  m_Px.push_back(x_cell);
+  m_Py.push_back(y_cell);
+  m_Pz.push_back(z_cell);
+  m_Ptheta.push_back(theta_surf);
+  m_Pphi.push_back(phi_surf);
+  m_Prob.push_back(prob);
+  
+}
+
+double DiscreteEarth::GetRandomNumber(){
+
+  double r = ((double) rand() / (RAND_MAX));
+
+  return r;
 
 }

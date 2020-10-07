@@ -18,6 +18,9 @@ Cell_t DiscreteEarth::m_Ocell;
 
 using namespace std;
 
+// Calculating the Sinogram from a Slice of the Earth along a longitude
+// using a mean oscillation probability of 0.544
+
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
@@ -25,13 +28,13 @@ int main(int argc, char * argv[]) {
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
-  //  d.SetUniformMantle(d.DepMantle);
-  d.SetMantleP1();
+  d.SetUniformMantle(d.DepMantle);
+  //d.SetMantleP1();
 
   // Prepare output file
   ofstream outfile;
-  //outfile.open("Sinogram_uniformmantle.dat");
-  outfile.open("Sinogram_pointmantle.dat");
+  outfile.open("Sinogram_uniformmantle.dat");
+  //outfile.open("Sinogram_pointmantle.dat");
 
   
   //  d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
@@ -123,8 +126,8 @@ int main(int argc, char * argv[]) {
 	  // u*v = |u|*|v|*cos(theta)
 	  prod = dx*basis1.x+dy*basis1.y+dz*basis1.z;
 	  cos_theta = prod/(1*mag_d);
-
 	  if(fabs(cos_theta - 1.0) < 0.01){
+
 	    FluxU238 += cells_l[i].a238U * cells_l[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
 	  }
 	}

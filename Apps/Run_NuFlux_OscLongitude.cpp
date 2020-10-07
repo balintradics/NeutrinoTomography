@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "math.h"
 #include <iostream>
-#include <vector>
+#include <fstream>
 
 #include "../EarthModel/DiscreteEarth.h"
 #include "../NeutrinoOsc/neutrino_osc.h"
@@ -16,92 +16,144 @@ double DiscreteEarth::m_Dz;
 double DiscreteEarth::m_PathLength;
 Cell_t DiscreteEarth::m_Ocell;
 
+using namespace std;
+
+// Calculating the Sinogram from a Slice of the Earth along a longitude
+// using the full oscillation from an external file
+
 int main(int argc, char * argv[]) {
 
-  // Given an Earth Cell, its "Depth" depends on from which
-  // direction we are looking down at it. This direction is 
-  // parametrized by two angles
-  
-  // To send a neutrino from a given Depth under an angle
-  // to a point on the surface, we need to give the
-  // - Travel Distance: vectorial difference between the Earth's surface
-  // point and the neutrino source
-  // - Density profile: along the line of sight for the neutrino
-  // This is provided by the DiscreteEarth class
-  
-  // double Angles (from Koike and Sato!)
-  double t12=33.0/180.0*PIGREEK;
-  double t13=asin(sqrt(0.025));
-  double t23 = PIGREEK/4.0;
-  // deltaCP
-  double delta=-90./180.0*PIGREEK;
-  // Differences in mass squared
-  double dm32=2.32e-3;
-  double dm21=7.59e-5;
-  
-  
   // Instantiate DiscreteEarth
-  DiscreteEarth d(100.0); // km cell size
-
+  DiscreteEarth d(300.0); // km cell size
+  //  d.ReadOscProb("NuProb_300km_long10deg.txt");
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
-  d.SetUniformMantle(d.DepMantle);
+  //  d.SetUniformMantle(d.DepMantle);
+  d.SetMantleP1();
 
-  // We calculate the Neutrino Flux by summing over all cells
-  // running the oscillation for each to calculate P
-  // evaluate the modified formula from O. Sramek et al.:
-  // Flux(r) = (nX * LambX/4pi) * \int P(r', r) * aX(r')*rho(r')/(|r-r'|)^2 dr'
+  // Prepare output file
+  ofstream outfile;
+  //outfile.open("Sinogram_uniformmantle.dat");
+  outfile.open("Sinogram_pointmantle.dat");
+
+  //  d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
+  //d.SaveSurfaceCellsToFile();
+  //d.SaveFluxMap("test_flux_map.dat");
+
+  // We calculate the local Neutrino Flux at each surface position
+  // by summing over all contributing cells
+  // and evaluating the formula from O. Sramek et al.
+  // Flux(r) = (nX * LambX/4pi) * <P> * \int aX(r')*rho(r')/(|r-r'|)^2 dr'
   // units: 1 * [1/s] * 1 * [1/kg] * [kg/m3] * m3 / m2 = [m2 / s]
-  
-  // Get a surface cell at (theta, phi)
-  double l = PIGREEK/2;
-  Cell_t s = d.GetSurfaceCell(0.0, l);
-  d.PrintCell(s);
+  // And save it to an output file for each lat, long
 
 
-  // Get list of cells at a given Longitude
-  std::vector<Cell_t> cells = d.GetCellsLongitude(l);
 
-  // Number of cells with non-zero activity
-  int Ncells = 0;
-  for(unsigned int i = 0; i < cells.size(); i++){
-    if(!d.IsEqual(cells[i],s) &&
-       cells[i].a238U > 0){
-      Ncells++;
-    }
-  }
-  std::cout << "Total cells to evaluate: " << Ncells << std::endl;
+  double l = 10*PIGREEK/180.0;
+  double l2 = (10+180)*PIGREEK/180.0;
+  double theta = 0.0;
+  double dtheta = PIGREEK/180.0;//d.m_DRad/2.0;
+  double theta_min = 0.0;
+  double theta_max = PIGREEK;
 
-  // Integrate contributions from all other cells
-  // Anti-Neutrino energy
-  double e = 0.003; // GeV
-  double FluxU238 = 0;
-  double Prob = 1.0; 
-  double dx, dy, dz, dr2;
-  for(unsigned int i = 0; i < cells.size(); i++){
-    if(!d.IsEqual(cells[i],s) &&
-       cells[i].a238U > 0){
-      // Then start from a vector pointing to the original cell
-      // and incrementally add a scaled difference vector to it,
-      // until it reaches the target
-      double Length = d.SetOriginTarget(cells[i], s);
+  cout << "Total number of rotations: " << (theta_max - theta_min)/dtheta << endl;
 
-      /* neutrino prop in matter */
-      nuox_set_propag_level(2,0);
-      /* anti-neutrino oscillation */
-      nuox_input_matrix_CKM(dm32,dm21,t12,t13,t23,delta);
-      nuox_set_neutrino(Length,e,-1);
-      Prob=nuox_osc_prob(NU_ELECTRON,NU_ELECTRON);
+  // Get list of surface cells along longitude - in unrotated coordinates!
+  std::vector<Cell_t> surfCells_Long = d.GetSurfaceCellsLongitude(l);
+  // Prototype of Radon transform: 
+  // - rotate patient and keep the detector fixed 
+  // - collect the 'collimated rays' in a plane for each angle
 
-      std::cout << "Probability: " << Prob << std::endl;
-      FluxU238 += Prob * cells[i].a238U * cells[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
-    }
-  }
-  // apply constants
-  //[1/km5] * [km3] * [1] * [1/s] * = [1/(km2*s)]
-  FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb / (4*PIGREEK);
+  // Get axis of rotation as a normal vector of the plane of the Longitude
+  Quat4d_t normQ = d.GetNormalToLongitude(l);
 
-  std::cout << "Flux U238 : " << FluxU238 << " aneutrinos / (km2*s)" << " = " << FluxU238/(100000.*100000.*1.e+06) << " aneutrinos / (cm2*us) " <<  std::endl;
+  // Get detector plane coordinate system's basis vectors
+  Quat4d_t basis1;
+  Quat4d_t basis2;
+  d.GetLongitudePlaneBasis(l, &basis1, &basis2);
+
+  cout << "Detector Basis1: " << endl;
+  d.PrintQ(basis1);
+  cout << "Detector Basis2: " << endl;
+  d.PrintQ(basis2);
+
+  // Rotating the Earth
+  // Loop over theta (latitude)
+  // l = 0-180 degrees
+  for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
+    if(int(theta*180.0/PIGREEK) % 10 == 0)
+      cout << "Rotation: " << theta*180.0/PIGREEK << endl;
+
+    // Rotate Earth around axis given by the normal to the longitudinal plane
+    d.RotateEarth(dtheta, normQ.x, normQ.y, normQ.z);
+
+    // We need to calculate:
+    // - Flux vectors with direction parallel to the detector coordinate basis1 vector (collimator approx)
+    // - Coordinate of the flux in the detector coordinate system of the longitude's plane (inner product with the basis vector)
+
+    // Loop over all cells along the longitude to collect all
+    cout << "Number of cells to calculate the flux for: " << surfCells_Long.size() << endl;
+    for(int is = 0; is < surfCells_Long.size(); is++){
+      // Current cell for which we calculate the flux
+      Cell_t s = surfCells_Long[is];
+
+      // only check half circle
+      double rc, thetac, phic;
+      d.ToSpherical(s.x, s.y, s.z, &rc, &thetac, &phic);
+      //cout << s.x << ", " << s.y << ", " << s.z << ", " << thetac << ", " <<  phic << " - " << d.m_DRad << endl;
+      if( fabs(phic-(l+PIGREEK)) > d.m_DRad)
+       	continue;
+      
+      // Need to calculate the position of this point in the fixed detector coordinate system
+      double local_coord = s.x * basis2.x + s.y * basis2.y + s.z * basis2.z;
+
+      double FluxU238 = 0; // unit: 
+      double meanProb = 0.544; 
+      double dx, dy, dz, dr2, mag_d, prod, cos_theta;
+      // This gives the already rotated cells!
+      std::vector<Cell_t> cells_l = d.GetCellsLongitude(l);
+      cout << "Numb of longitude cells to integrate flux: " << cells_l.size() << endl;
+      int count_tot_par = 0;// only counting the ones with parallel direction
+      for(unsigned int i = 0; i < cells_l.size(); i++){
+	if(!d.IsEqual(cells_l[i],s)){
+	  // vectorial difference
+	  dx = s.x - cells_l[i].x;
+	  dy = s.y - cells_l[i].y;
+	  dz = s.z - cells_l[i].z;
+	  dr2 = dx*dx + dy*dy + dz*dz;
+	  mag_d = sqrt(dr2);
+	  // Collimator approximation: only accept neutrinos that are parallel
+	  // with the detector axis 
+	  // u*v = |u|*|v|*cos(theta)
+	  prod = dx*basis1.x+dy*basis1.y+dz*basis1.z;
+	  cos_theta = prod/(1*mag_d);
+	  if(fabs(cos_theta - 1.0) < 0.01){
+	    count_tot_par++;
+
+	    // Formula for mean osc probability
+	    FluxU238 += cells_l[i].a238U * cells_l[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
+
+	  }
+	}
+      }
+      // apply constants
+      //[1/km5] * [km3] * [1] * [1/s] * [1] = [1/(km2*s)]
+      // Formula for mean osc probability
+      FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb * meanProb / (4*PIGREEK);
+
+      outfile << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
+      //      cout << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
+    }// loop over surface cells along longitude
+
+
+  } // loop over rotations
+
+  outfile.close();
+
+
+  // My: 0 --> Glob: +90
+  // My: 90 --> Glob: 0
+  // My: 180 --> Glob -90
 
   return 0;
 }

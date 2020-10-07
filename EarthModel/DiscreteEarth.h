@@ -151,9 +151,16 @@ class DiscreteEarth {
   Quat4d_t MultiplyQ(Quat4d_t q1, Quat4d_t q2);
   void PrintQ(Quat4d_t q1);
 
-  // Rotate all cells of Earth by theta angle around an qxis
+  // Rotate all cells of Earth by theta angle around an axis
   void RotateEarth(double angle, double rx, double ry, double rz);
 
+  // Read in neutrino oscillation probabilities from external pre-generated file
+  void ReadOscProb(const char * infilename = "input.txt");
+  double GetOscProb(double theta_surf, double phi_surf, double x_cell, double y_cell, double z_cell);
+  void WriteOscProb(double theta_surf, double phi_surf, double x_cell, double y_cell, double z_cell, double prob);
+
+  // Utility function to get rand number between 0 and 1
+  double GetRandomNumber();
 
  public:
   // internally we represent the coordinates
@@ -173,6 +180,17 @@ class DiscreteEarth {
   static double m_Dy; // Direction y
   static double m_Dz; // Direction z
   static double m_PathLength;
+
+  // Structures to hold the neutrino oscillation probability
+  // between a surface cell (theta, phi) and an earth cell (x,y,z)
+  // It is dynamic, since we might not always need it.
+  std::vector<double> m_Prob;
+  std::vector<double> m_Px;
+  std::vector<double> m_Py;
+  std::vector<double> m_Pz;
+  std::vector<double> m_Ptheta;
+  std::vector<double> m_Pphi;
+
 
   // Structures to hold Atomic constants
   AtomConst_t U238;
