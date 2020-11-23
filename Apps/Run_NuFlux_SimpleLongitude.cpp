@@ -24,17 +24,20 @@ using namespace std;
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
-  DiscreteEarth d(300.0); // km cell size
+  DiscreteEarth d(100.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
   d.SetUniformMantle(d.DepMantle);
   //d.SetMantleP1();
+  //  d.SetMantleP2();
 
   // Prepare output file
   ofstream outfile;
   outfile.open("Sinogram_uniformmantle.dat");
   //outfile.open("Sinogram_pointmantle.dat");
+  //outfile.open("Sinogram_point2mantle.dat");
+
 
   
   //  d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
@@ -51,9 +54,9 @@ int main(int argc, char * argv[]) {
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
-  double dtheta = PIGREEK/180.0;//d.m_DRad/2.0;
+  double dtheta = 0.5*PIGREEK/180.0;//d.m_DRad/2.0;
   double theta_min = 0.0;
-  double theta_max = PIGREEK;
+  double theta_max = 2.0*PIGREEK;
 
   cout << "Total number of rotations: " << (theta_max - theta_min)/dtheta << endl;
 
@@ -70,8 +73,8 @@ int main(int argc, char * argv[]) {
   Quat4d_t normQ = d.GetNormalToLongitude(l);
 
   // Get detector plane coordinate system's basis vectors
-  Quat4d_t basis1;
-  Quat4d_t basis2;
+  Quat4d_t basis1;// X - axis rotated into the Longitude plane
+  Quat4d_t basis2;// Z - axis (0, 0, 1)
   d.GetLongitudePlaneBasis(l, &basis1, &basis2);
 
   cout << "Detector Basis1: " << endl;
@@ -122,11 +125,11 @@ int main(int argc, char * argv[]) {
 	  dr2 = dx*dx + dy*dy + dz*dz;
 	  mag_d = sqrt(dr2);
 	  // Collimator approximation: only accept neutrinos that are parallel
-	  // with the detector axis 
+	  // with the detector plane basis
 	  // u*v = |u|*|v|*cos(theta)
 	  prod = dx*basis1.x+dy*basis1.y+dz*basis1.z;
 	  cos_theta = prod/(1*mag_d);
-	  if(fabs(cos_theta - 1.0) < 0.01){
+	  if(fabs(cos_theta - 1.0) < 0.01){ // 0.05 should correspnd to ~20 degrees resolution...?
 
 	    FluxU238 += cells_l[i].a238U * cells_l[i].rho / dr2; // [1/kg]*[kg/km3]/[km2] = [1/km5]
 	  }

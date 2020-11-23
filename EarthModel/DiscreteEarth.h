@@ -108,7 +108,11 @@ class DiscreteEarth {
   std::vector<Cell_t> GetSurfaceCellsLongitude(double phi_fix);
   Quat4d_t GetNormalToLongitude(double phi);
   void GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d_t * basis2); 
-
+  void CreateDetector(Quat4d_t basis1, Quat4d_t basis2);
+  void PrintDetector();
+  Quat4d_t GetDetCoord(Cell_t surfcell, Quat4d_t basis2);
+  
+  
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
 
@@ -130,6 +134,7 @@ class DiscreteEarth {
   void SetUniformMantle(Comp_t comp);
   // Set a particular Enriched Mantle model
   void SetMantleP1();
+  void SetMantleP2();
   // Set single enriched layer
   void SetMantleEnrichedLayer(Comp_t comp, double deltaR, double latMin, double latMax, double lonMin, double lonMax );
 
@@ -201,6 +206,10 @@ class DiscreteEarth {
   //Depleted Mantel composition from Arevalo and McDonough
   Comp_t DepMantle;
 
+  // Detector bins coordinates - lower edge
+  std::vector<Quat4d_t> m_Det1;
+
+  
 };
 
 

@@ -92,7 +92,7 @@ int main(int argc, char * argv[]) {
     // - Coordinate of the flux in the detector coordinate system of the longitude's plane (inner product with the basis vector)
 
     // Loop over all cells along the longitude to collect all
-    cout << "Number of cells to calculate the flux for: " << surfCells_Long.size() << endl;
+    //    cout << "Number of cells to calculate the flux for: " << surfCells_Long.size() << endl;
     for(int is = 0; is < surfCells_Long.size(); is++){
       // Current cell for which we calculate the flux
       Cell_t s = surfCells_Long[is];
@@ -112,7 +112,7 @@ int main(int argc, char * argv[]) {
       double dx, dy, dz, dr2, mag_d, prod, cos_theta;
       // This gives the already rotated cells!
       std::vector<Cell_t> cells_l = d.GetCellsLongitude(l);
-      cout << "Numb of longitude cells to integrate flux: " << cells_l.size() << endl;
+      // cout << "Numb of longitude cells to integrate flux: " << cells_l.size() << endl;
       int count_tot_par = 0;// only counting the ones with parallel direction
       for(unsigned int i = 0; i < cells_l.size(); i++){
 	if(!d.IsEqual(cells_l[i],s)){

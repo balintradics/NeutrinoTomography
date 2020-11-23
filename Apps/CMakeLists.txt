@@ -9,7 +9,9 @@ set(APPS
 	 Run_NuProb_OscLongitude
 	 RotateEarth
 	 Print_SurfaceCells_Long
-	 Run_CalcOscProb_Cell)
+	 Run_CalcOscProb_Cell
+	 Print_SliceActivity_Long
+	 Run_SaveDetCoords)
 
 
 foreach(a ${APPS})

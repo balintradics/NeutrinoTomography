@@ -208,14 +208,14 @@ void DiscreteEarth::GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d
   Quat4d_t q = MultiplyQ(qr, qe);
   Quat4d_t q3 = MultiplyQ(q, qrnc);
 
-  // The rotate x - basis vector
+  // The rotated x - basis vector
   (*basis1).x = q3.x;
   (*basis1).y = q3.y;
   (*basis1).z = q3.z;
   (*basis1).w = 0.0;
 
   // This should be just the z - basis vector
-  // We rotate around the z axis
+  // The z - axis stays unchanged when rotating around it by phi
   (*basis2).x = 0;
   (*basis2).y = 0;
   (*basis2).z = 1;
@@ -224,6 +224,53 @@ void DiscreteEarth::GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d
   return;
 
 }
+
+void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2){
+  // Just a discretization of Z coordinates to bins
+  // then shifted to the edge of the Planet
+  int nbins = (int)(2*R_E/m_DCell)+1;
+
+  for(int i = 0; i <= nbins; i++){
+     Quat4d_t q;
+     q.x = basis1.x*R_E;// shift
+     q.y = basis1.y*R_E;// shift
+     q.z = -R_E+i*m_DCell;
+     q.w = 0.0;
+     m_Det1.push_back(q);
+  }
+
+  
+
+}
+void DiscreteEarth::PrintDetector(){
+
+  for(int i = 0; i < m_Det1.size(); i++){
+    PrintQ(m_Det1[i]);
+  }
+
+}
+Quat4d_t DiscreteEarth::GetDetCoord(Cell_t surfcell, Quat4d_t basis2){
+
+  double z_coord = surfcell.z * basis2.z;
+  Quat4d_t q;
+  bool found = false;
+  // find the corresponding detector bin coordinate
+  for(int i = 0; i < m_Det1.size()-1; i++){
+    if(z_coord >= m_Det1[i].z && z_coord <= m_Det1[i+1].z){
+      q = m_Det1[i];
+      found = true;
+      break;
+    }
+  }
+  
+  if(!found){
+    cout << "Error: No corresponding detector coordinate!" << surfcell.x << ", " << surfcell.y << ", " << surfcell.z << endl;
+  }
+
+  return q;
+
+}
+
 
 // Outputs the list of cells lying in the plane of a longitude
 void DiscreteEarth::SaveCellsLongitudeToFile(double phi_fix, const char * ofilename){
@@ -622,9 +669,45 @@ void DiscreteEarth::SetMantleP1(){
   EnMantle.A_U *= E_X_U;
   EnMantle.A_Th *= E_X_Th;
   SetMantleEnrichedLayer(EnMantle, 1000.0, 90.0*PI/180, 120*PI/180, 0.0*PI/180.0, 20*PI/180.0);
+  // SetMantleEnrichedLayer(EnMantle, 1000.0, 90.0*PI/180, 120*PI/180, 0.0*PI/180.0, 20*PI/180.0);
 
   // In the internal coord. system: theta = 0 corresponds to upwards (in geography that's +90 Latitude)
 }
+
+
+
+// An idealized, double 1000 km thick piles 
+// with a lateral extent: Lat = 0 - 76 degrees at both sides
+void DiscreteEarth::SetMantleP2(){
+  // Enrichment factor E_X = A_X^{EM} / A_X^{DM}
+  // where A_X^{DM} is the normal Depleted Mantle composition
+  // A_X^{EM} is the enriched Mantle composition
+  
+  //Enriched Mantel composition from Arevalo and McDonough
+
+  double E_X_U = 6.3;
+  double E_X_Th = 12;
+
+  // Add first a uniform mantle 
+  SetUniformMantle(DepMantle);
+
+  // Overwrite the uniform mantle where enrichment is needed
+  Comp_t EnMantle = DepMantle;
+  EnMantle.A_U *= E_X_U;
+  EnMantle.A_Th *= E_X_Th;
+  SetMantleEnrichedLayer(EnMantle, 1000.0, 60.0*PI/180, 120*PI/180, 0.0*PI/180.0, 20*PI/180.0);
+  SetMantleEnrichedLayer(EnMantle, 1000.0, 60.0*PI/180, 120*PI/180, (0.0+180.0)*PI/180.0, (20+180)*PI/180.0);
+
+  // To set North/South enriched layers:
+  // SetMantleEnrichedLayer(EnMantle, 1000.0, (0.0)*PI/180, (30)*PI/180, 0.0*PI/180.0, 20*PI/180.0);
+  // SetMantleEnrichedLayer(EnMantle, 1000.0, (0.0)*PI/180, (30)*PI/180, (0.0+180)*PI/180.0, (20+180)*PI/180.0);
+
+  // SetMantleEnrichedLayer(EnMantle, 1000.0, (150.0)*PI/180, (180.0)*PI/180, 0.0*PI/180.0, 20*PI/180.0);
+  // SetMantleEnrichedLayer(EnMantle, 1000.0, (150.0)*PI/180, (180.0)*PI/180, (0.0+180)*PI/180.0, (20+180)*PI/180.0);
+
+  // In the internal coord. system: theta = 0 corresponds to upwards (in geography that's +90 Latitude)
+}
+
 
 // Set single enriched layer
 void DiscreteEarth::SetMantleEnrichedLayer(Comp_t comp, double deltaR, double latMin, double latMax, double lonMin, double lonMax ){
