@@ -111,7 +111,7 @@ class DiscreteEarth {
   void CreateDetector(Quat4d_t basis1, Quat4d_t basis2);
   void PrintDetector();
   Quat4d_t GetDetCoord(Cell_t surfcell, Quat4d_t basis2);
-  
+  int GetDetBin(Cell_t surfcell, Quat4d_t basis2);
   
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
@@ -207,7 +207,10 @@ class DiscreteEarth {
   Comp_t DepMantle;
 
   // Detector bins coordinates - lower edge
+  int m_NDetCells;
+  double m_DetCellSize; 
   std::vector<Quat4d_t> m_Det1;
+  std::vector<Quat4d_t> m_Det2;
 
   
 };

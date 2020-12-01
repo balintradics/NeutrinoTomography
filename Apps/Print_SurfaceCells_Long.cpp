@@ -26,7 +26,7 @@ int main(int argc, char * argv[]) {
   std::vector<Cell_t> scellslong = d.GetSurfaceCellsLongitude(10.0*PIGREEK/180.0);
 
   ofstream outfile ;
-  outfile.open("Surf_Cells_Longitudet.dat");
+  outfile.open("Surf_Cells_Longitudet_10.dat");
   for(int i = 0; i < scellslong.size();i++){
     outfile << scellslong[i].x << "\t" << scellslong[i].y << "\t" << scellslong[i].z << "\t" << endl;
   }

@@ -132,6 +132,12 @@ DiscreteEarth::DiscreteEarth(double dcell){
   // set initial seed value to system clock
   srand( time(NULL) );
   
+  // Initialize number of detector cells and cell size
+  m_DetCellSize = m_DCell;
+  m_NDetCells = (int)(2*R_E/m_DetCellSize);
+
+
+
 }
 
 DiscreteEarth::~DiscreteEarth(){
@@ -228,15 +234,23 @@ void DiscreteEarth::GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d
 void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2){
   // Just a discretization of Z coordinates to bins
   // then shifted to the edge of the Planet
-  int nbins = (int)(2*R_E/m_DCell)+1;
 
-  for(int i = 0; i <= nbins; i++){
+  for(int i = 0; i <= m_NDetCells; i++){
      Quat4d_t q;
      q.x = basis1.x*R_E;// shift
      q.y = basis1.y*R_E;// shift
-     q.z = -R_E+i*m_DCell;
+     q.z = -R_E+i*m_DetCellSize;
      q.w = 0.0;
      m_Det1.push_back(q);
+  }
+
+  for(int i = 0; i <= m_NDetCells; i++){
+     Quat4d_t q;
+     q.x = -basis1.x*R_E;// shift
+     q.y = -basis1.y*R_E;// shift
+     q.z = -R_E+i*m_DetCellSize;
+     q.w = 0.0;
+     m_Det2.push_back(q);
   }
 
   
@@ -244,11 +258,16 @@ void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2){
 }
 void DiscreteEarth::PrintDetector(){
 
+  cout << "Number of detector cells: " << m_NDetCells << endl;
+  cout << "Detector cell size: " << m_DetCellSize << endl;
+  
   for(int i = 0; i < m_Det1.size(); i++){
     PrintQ(m_Det1[i]);
   }
 
 }
+
+// Only for Det1 - Det2 is the mirror "fake" detector
 Quat4d_t DiscreteEarth::GetDetCoord(Cell_t surfcell, Quat4d_t basis2){
 
   double z_coord = surfcell.z * basis2.z;
@@ -270,6 +289,32 @@ Quat4d_t DiscreteEarth::GetDetCoord(Cell_t surfcell, Quat4d_t basis2){
   return q;
 
 }
+
+
+// Only for Det1 - Det2 is the mirror "fake" detector
+int DiscreteEarth::GetDetBin(Cell_t surfcell, Quat4d_t basis2){
+
+  double z_coord = surfcell.z * basis2.z;
+  int ret = 0;
+  bool found = false;
+  // find the corresponding detector bin coordinate
+  for(int i = 0; i < m_Det1.size()-1; i++){
+    if(z_coord >= m_Det1[i].z && z_coord <= m_Det1[i+1].z){
+      ret = i;
+      found = true;
+      break;
+    }
+  }
+  
+  if(!found){
+    cout << "Error: No corresponding detector coordinate!" << surfcell.x << ", " << surfcell.y << ", " << surfcell.z << endl;
+  }
+
+  return ret;
+
+}
+
+
 
 
 // Outputs the list of cells lying in the plane of a longitude

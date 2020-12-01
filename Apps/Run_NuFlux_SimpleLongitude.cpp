@@ -24,19 +24,25 @@ using namespace std;
 int main(int argc, char * argv[]) {
 
   // Instantiate DiscreteEarth
-  DiscreteEarth d(100.0); // km cell size
+  DiscreteEarth d(200.0); // km cell size
 
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
   d.SetUniformMantle(d.DepMantle);
-  //d.SetMantleP1();
+  d.SetMantleP1();
   //  d.SetMantleP2();
 
   // Prepare output file
   ofstream outfile;
-  outfile.open("Sinogram_uniformmantle.dat");
-  //outfile.open("Sinogram_pointmantle.dat");
+  ofstream outfile_det;
+  //outfile.open("Sinogram_uniformmantle_Long10_200km.dat");
+  //outfile_det.open("Det_sinogram_uniformmantle_Long10_200km.dat");
+
+  outfile.open("Sinogram_pointmantle_Long10_200km.dat");
+  outfile_det.open("Det_sinogram_pointmantle_Long10_200km.dat");
   //outfile.open("Sinogram_point2mantle.dat");
+
+
 
 
   
@@ -54,7 +60,7 @@ int main(int argc, char * argv[]) {
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
-  double dtheta = 0.5*PIGREEK/180.0;//d.m_DRad/2.0;
+  double dtheta = 1.0*PIGREEK/180.0;//d.m_DRad/2.0;
   double theta_min = 0.0;
   double theta_max = 2.0*PIGREEK;
 
@@ -82,6 +88,8 @@ int main(int argc, char * argv[]) {
   cout << "Detector Basis2: " << endl;
   d.PrintQ(basis2);
 
+  d.CreateDetector(basis1, basis2);
+
   // Rotating the Earth
   // Loop over theta (latitude)
   // l = 0-180 degrees
@@ -96,11 +104,14 @@ int main(int argc, char * argv[]) {
     // - Flux vectors with direction parallel to the detector coordinate basis1 vector (collimator approx)
     // - Coordinate of the flux in the detector coordinate system of the longitude's plane (inner product with the basis vector)
 
+    // The detector cells
+    std::vector<float> Det1_v(d.m_Det1.size());
+ 
     // Loop over all cells along the longitude to collect all
     for(int is = 0; is < surfCells_Long.size(); is++){
       // Current cell for which we calculate the flux
       Cell_t s = surfCells_Long[is];
-
+      int detbin = d.GetDetBin(s, basis2);
       // only check half circle
       double rc, thetac, phic;
       d.ToSpherical(s.x, s.y, s.z, &rc, &thetac, &phic);
@@ -138,16 +149,27 @@ int main(int argc, char * argv[]) {
       // apply constants
       //[1/km5] * [km3] * [1] * [1/s] * [1] = [1/(km2*s)]
       FluxU238 *= (d.m_DCell*d.m_DCell*d.m_DCell) * d.U238.Mnu * d.U238.Lamb * meanProb / (4*PIGREEK);
-
+      Det1_v[detbin] += FluxU238;
+      
       outfile << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
+      
       //      cout << theta << "\t" << local_coord << "\t" << FluxU238/(100000.*100000.*1.e+06) << "\t" << endl;
     }
 
+    // Save detector cell values as "image"
+    for(int idet = 0; idet < Det1_v.size(); idet++){
+      outfile_det << Det1_v[idet] << "\t" << flush;
+    }
+    outfile_det << endl;
 
   }
 
   outfile.close();
 
+  outfile_det.close();
+
+  
+  
 
   // My: 0 --> Glob: +90
   // My: 90 --> Glob: 0
