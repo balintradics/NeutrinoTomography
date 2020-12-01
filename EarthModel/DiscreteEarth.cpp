@@ -3,8 +3,6 @@
 #include <time.h> 
 #include <cstdlib> 
 #include <ctime>
-#include "iostream"
-#include "fstream"
 
 #include "DiscreteEarth.h"
 
@@ -977,4 +975,83 @@ double DiscreteEarth::GetRandomNumber(){
 
   return r;
 
+}
+
+void DiscreteEarth::OpenLMF(const std::string filename){
+
+  m_LMFile = std::make_shared<std::ofstream>(filename, std::ios::out | std::ios::binary);
+
+  if(!(m_LMFile->is_open())) {
+    std::cerr << "DiscreteEarth::OpenLMF; cannot open output file: " << filename << std::endl;
+    return;
+  }
+
+  m_LMFile->clear(); //clear error bits, just in case
+  const std::string header0 = "SAFIR_TOF_coincListMode";
+  m_LMFile->write(&header0[0], header0.size());
+  
+  const std::string fill(64, 0);
+  m_LMFile->write(&fill[0], fill.size());
+
+}
+
+void DiscreteEarth::ProcessLMF(){
+
+  // Process coincidence
+
+  // const int64_t coincTimePS = coinc->getTime();
+  // std::vector<std::shared_ptr<CorrectedHit> > hits = coinc->getHits();
+  // if(hits.size() != 2)
+  //   return;
+  
+  // if((coincTimePS - m_lastTime) > 1e9) { //-> one new timestamp about every ms
+  //   m_lastTime = coincTimePS;
+  //   ListModeData dataSetTime;
+  //   dataSetTime.timeEntry.type = 1;
+  //   dataSetTime.timeEntry.time = (int)round(coincTimePS / 1e9);
+  //   m_LMFile->write(reinterpret_cast<char*>(&dataSetTime), sizeof(dataSetTime));
+  // }
+  
+  // if(m_oldDetectorPosition != hits.at(0)->getDetectorPosition()) {
+  //   m_totalDifferentDetectorPositions++;
+  //   std::cout << "new detector number " << m_oldDetectorPosition << " " << hits.at(0)->getDetectorPosition() << std::endl;
+  //   ListModeData dataSetPosition;
+  //   dataSetPosition.positionEntry.type = 2;
+  //   dataSetPosition.positionEntry.oldPosition = m_oldDetectorPosition;
+  //   dataSetPosition.positionEntry.newPosition = hits.at(0)->getDetectorPosition();
+  //   m_LMFile->write(reinterpret_cast<char*>(&dataSetPosition), sizeof(dataSetPosition));
+  //   m_oldDetectorPosition = hits.at(0)->getDetectorPosition();
+  // }
+  
+  //store the normal coincidence
+  ListModeData dataSetEvent;
+  dataSetEvent.eventEntry.type = 0;
+  
+  dataSetEvent.eventEntry.ring0 = 0;//hits.at(0)->getRingNumber();
+  dataSetEvent.eventEntry.crystal0 = 0;//hits.at(0)->getCrystalNumber();
+  dataSetEvent.eventEntry.layer0 = 0;
+  
+  dataSetEvent.eventEntry.ring1 = 0;//hits.at(1)->getRingNumber();
+  dataSetEvent.eventEntry.crystal1 = 0;//hits.at(1)->getCrystalNumber();
+  dataSetEvent.eventEntry.layer1 = 0;
+  
+  // const int64_t tDiff = (hits.at(0)->getTime() - hits.at(1)->getTime());
+  // if(abs(tDiff) >= 2048)
+  //   std::cerr << "CoincidenceToLMTOFExport::processCoincidence; tDiff to large... " << tDiff << std::endl;
+  // const uint64_t unTDiff = tDiff + 2048;
+  // dataSetEvent.eventEntry.t0MinusT1 = unTDiff & 0xFFF; //to save the signed value in the unsigned field
+  
+  m_LMFile->write(reinterpret_cast<char*>(&dataSetEvent), sizeof(dataSetEvent));
+  if(m_LMFile->fail()) {
+    std::cerr << "DiscreteEarth::ToLMFExport; error while writing to file" << std::endl;
+    exit(-1);
+  }
+
+}
+
+void DiscreteEarth::CloseLMF(){
+  
+  // close the file
+  m_LMFile->close();
+  
 }

@@ -169,8 +169,12 @@ int main(int argc, char * argv[]) {
   outfile_det.close();
 
   
+  // Save ListMode binary file
+  std::string outlmfname = std::string("lmfile.dat");
+  d.OpenLMF(outlmfname);
+  d.ProcessLMF();
+  d.CloseLMF();
   
-
   // My: 0 --> Glob: +90
   // My: 90 --> Glob: 0
   // My: 180 --> Glob -90

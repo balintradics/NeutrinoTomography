@@ -2,6 +2,9 @@
 #define DISCRETEEARTH_H
 
 #include <vector>
+#include <memory>
+#include <iostream>
+#include <fstream>
 
 // DiscreteEarth class: provides an object that can store at a given (r, phi theta)
 //  - the local density
@@ -88,7 +91,50 @@ struct Quat4d_t{
   double w;// angle
 };
 
-  
+
+// structures for ListMode data output
+class DetectorPositionChangeData64bits
+{
+public:
+        unsigned oldPosition: 30;
+        unsigned newPosition: 30;
+        unsigned type : 2; //0 = coinc, 1 = time, 2 = detectorPositionChange, 3 reserved for later
+};
+
+class TimeData64bits
+{
+public:
+        unsigned long time: 62;
+        unsigned type : 2; //0 = coinc, 1 = time, 2 = detectorPositionChange, 3 reserved for later
+};
+
+class EventData64bits
+{
+public:
+        unsigned ring0 : 8;
+        unsigned crystal0 : 13;
+        unsigned layer0 : 3;
+        unsigned ring1 : 8;
+        unsigned crystal1 : 13;
+        unsigned layer1 : 3;
+        unsigned t0MinusT1 : 12; //in 1ps lsbs
+        unsigned scatter : 1;
+        unsigned random : 1;
+        unsigned type : 2; //0 = coinc, 1 = time, 2 = detectorPositionChange, 3 reserved for later
+};
+
+
+class ListModeData
+{
+        public: union
+        {
+                DetectorPositionChangeData64bits positionEntry;
+                EventData64bits eventEntry;
+                TimeData64bits timeEntry;
+        };
+};
+
+
 // Spherical coordinate system
 // r, theta (polar), phi (azimuth)
 // theta: 0 - pi
@@ -112,6 +158,12 @@ class DiscreteEarth {
   void PrintDetector();
   Quat4d_t GetDetCoord(Cell_t surfcell, Quat4d_t basis2);
   int GetDetBin(Cell_t surfcell, Quat4d_t basis2);
+
+  // Write binary list mode format
+  void OpenLMF(const std::string filename);
+  void ProcessLMF();
+  void CloseLMF();
+
   
   void ToSpherical(double x, double y, double z, double * r, double * theta, double * phi);
   void ToCartesian(double r, double theta, double phi, double * x, double * y, double * z);
@@ -212,6 +264,7 @@ class DiscreteEarth {
   std::vector<Quat4d_t> m_Det1;
   std::vector<Quat4d_t> m_Det2;
 
+  std::shared_ptr<std::ofstream> m_LMFile;// binary listmode file output
   
 };
 

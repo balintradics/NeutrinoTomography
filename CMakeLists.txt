@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 # Create project 
 project(NuTomo CXX)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Changes default install path to be a subdirectory of the build dir.
 # Can set build dir at configure time with -DCMAKE_INSTALL_PREFIX=/install/path
