@@ -154,7 +154,8 @@ class DiscreteEarth {
   std::vector<Cell_t> GetSurfaceCellsLongitude(double phi_fix);
   Quat4d_t GetNormalToLongitude(double phi);
   void GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d_t * basis2); 
-  void CreateDetector(Quat4d_t basis1, Quat4d_t basis2);
+  void CreateDetector(Quat4d_t basis1, Quat4d_t basis2, Quat4d_t qrot, double angle = 0);
+  //  void CreateDetector(Quat4d_t basis1, Quat4d_t basis2);
   void PrintDetector();
   Quat4d_t GetDetCoord(Cell_t surfcell, Quat4d_t basis2);
   int GetDetBin(Cell_t surfcell, Quat4d_t basis2);
@@ -207,7 +208,11 @@ class DiscreteEarth {
   Quat4d_t ScaleQ(Quat4d_t q1, double s);
   Quat4d_t MultiplyQ(Quat4d_t q1, Quat4d_t q2);
   void PrintQ(Quat4d_t q1);
+  double GetVecOverlap(Quat4d_t v1, Quat4d_t v2);
+  // Rotate a single quaternion q around the rotation axis given by rotq by angle
+  Quat4d_t RotateQuaternion(Quat4d_t quat, Quat4d_t rotq, double angle);
 
+  
   // Rotate all cells of Earth by theta angle around an axis
   void RotateEarth(double angle, double rx, double ry, double rz);
 

@@ -229,31 +229,49 @@ void DiscreteEarth::GetLongitudePlaneBasis(double phi, Quat4d_t * basis1, Quat4d
 
 }
 
-void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2){
-  // Just a discretization of Z coordinates to bins
-  // then shifted to the edge of the Planet
+void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2, Quat4d_t qrot, double angle){
+  // Basis1 is the negative normal of the detector plane
+  // Equation of a line: a point on the line and a vector along the line
+  // Basis1*R_E gives the center point of the line
+  // Construct a vector along the line by rotating the Basis1 by 90deg
 
-  for(int i = 0; i <= m_NDetCells; i++){
+  m_Det1.clear();
+  m_Det2.clear();
+
+  Quat4d_t linevec = RotateQuaternion(basis1, qrot, 90.0*PI/180.0);
+
+  // Add half the detector cells + and - from the central point
+
+  // note we start with 1 because we already added the center det cell
+  for(int i = m_NDetCells/2 + 1; i >= 1; i--){
      Quat4d_t q;
-     q.x = basis1.x*R_E;// shift
-     q.y = basis1.y*R_E;// shift
-     q.z = -R_E+i*m_DetCellSize;
+     q.x = basis1.x*R_E - i*m_DetCellSize*linevec.x;
+     q.y = basis1.y*R_E - i*m_DetCellSize*linevec.y;
+     q.z = basis1.z*R_E - i*m_DetCellSize*linevec.z;
      q.w = 0.0;
+
+     //     RotateQuaternion(&q, qrot, angle);
+     
      m_Det1.push_back(q);
   }
 
-  for(int i = 0; i <= m_NDetCells; i++){
+  
+  for(int i = 0; i <= m_NDetCells/2 + 1; i++){
      Quat4d_t q;
-     q.x = -basis1.x*R_E;// shift
-     q.y = -basis1.y*R_E;// shift
-     q.z = -R_E+i*m_DetCellSize;
+     q.x = basis1.x*R_E + i*m_DetCellSize*linevec.x;
+     q.y = basis1.y*R_E + i*m_DetCellSize*linevec.y;
+     q.z = basis1.z*R_E + i*m_DetCellSize*linevec.z;
      q.w = 0.0;
-     m_Det2.push_back(q);
+
+     //     RotateQuaternion(&q, qrot, angle);
+     m_Det1.push_back(q);
   }
 
-  
+
 
 }
+
+
 void DiscreteEarth::PrintDetector(){
 
   cout << "Number of detector cells: " << m_NDetCells << endl;
@@ -288,24 +306,51 @@ Quat4d_t DiscreteEarth::GetDetCoord(Cell_t surfcell, Quat4d_t basis2){
 
 }
 
+// Get cos of angular overlap between to 3D vectors
+// for parallel vectros it gives cos(theta) =  1.0
+double DiscreteEarth::GetVecOverlap(Quat4d_t v1, Quat4d_t v2){
+
+  // Collimator approximation: only accept neutrinos that are parallel
+  // with the detector plane basis
+  // u*v = |u|*|v|*cos(theta)
+  double prod = v1.x*v2.x+v1.y*v2.y+v1.z*v2.z;
+  double mag1 = sqrt(v1.x*v1.x + v1.y*v1.y + v1.z*v1.z);
+  double mag2 = sqrt(v2.x*v2.x + v2.y*v2.y + v2.z*v2.z);
+  double cos_theta = prod/(mag1*mag2);
+  
+  return cos_theta;
+
+}
+
 
 // Only for Det1 - Det2 is the mirror "fake" detector
 int DiscreteEarth::GetDetBin(Cell_t surfcell, Quat4d_t basis2){
 
-  double z_coord = surfcell.z * basis2.z;
+  // Project the surfcell onto the basis2 vector to get the coordinate
+  // Then find the cell with that coordinate
+  //  cout << "GetDetBin: Surface cell: " << surfcell.x << ", " << surfcell.y << ", " << surfcell.z << endl;
+  double surf_projcoord = surfcell.x*basis2.x + surfcell.y*basis2.y + surfcell.z*basis2.z;
+  
   int ret = 0;
   bool found = false;
+  double diff = 99999999.0;
   // find the corresponding detector bin coordinate
   for(int i = 0; i < m_Det1.size()-1; i++){
-    if(z_coord >= m_Det1[i].z && z_coord <= m_Det1[i+1].z){
+    double det_projcoord = m_Det1[i].x*basis2.x + m_Det1[i].y*basis2.y + m_Det1[i].z*basis2.z;
+    
+    diff = fabs(det_projcoord - surf_projcoord);
+    //    cout << "GetDetBin: Det[" << i << "], current diff: " << surf_projcoord - det_projcoord << endl;
+    if(diff  < m_DCell){
       ret = i;
       found = true;
+      //      cout << "Found: diff = " << diff << endl;
       break;
     }
   }
   
   if(!found){
-    cout << "Error: No corresponding detector coordinate!" << surfcell.x << ", " << surfcell.y << ", " << surfcell.z << endl;
+    cout << "Error: No corresponding detector coordinate!" << surfcell.x << ", " << surfcell.y << ", " << surfcell.z << ", diff: " << diff << endl;
+    
   }
 
   return ret;
@@ -845,6 +890,40 @@ void DiscreteEarth::PrintQ(Quat4d_t q1){
   std::cout << "\t w: " << q1.w << std::endl;
   std::cout << "\t Norm: " << sqrt(q1.x*q1.x+q1.y*q1.y+q1.z*q1.z + q1.w*q1.w) << std::endl;
 }
+
+// Rotate a single quaternion q around the rotation axis given by rotq by angle
+Quat4d_t DiscreteEarth::RotateQuaternion(Quat4d_t quat, Quat4d_t rotq, double angle){
+
+  // Rotation by Quaternion algebra:
+  // rotate a vector "p" by angle "angle" around a (unit) axis "r"
+  // Form Quaterniin: q1 = (px, py, pz, 0)
+  // Form unit rotation Quaternion: q2 = (rx*sin(angle/2), ry*sin(angle/2), rz*sin(angle/2), cos(angle/2))
+  // Forward rotated Quaternion: Q3 = q2 * q1 * q2^{*}  
+  // Backward rotated Quaternion: Q3 = q2^{*} * q1 * q2 
+
+  // Rotation Quaternion:
+  Quat4d_t qr = ToRotQuaternion(rotq.x, rotq.y, rotq.z, angle);
+  // PrintQ(qr);
+
+  // conjugate
+  Quat4d_t qrnc = ConjugateQ(qr);
+  //  PrintQ(qrnc);
+
+
+  // Form Quaternion
+  Quat4d_t qe = quat;
+  // Rotate
+  Quat4d_t q = MultiplyQ(qr, qe);
+  Quat4d_t qfinal = MultiplyQ(q, qrnc);
+
+  return qfinal;
+  
+
+}
+
+  
+
+
 
 // Rotate all cells of Earth by theta angle around an axis, rotation vector (rx, ry, rz) must be normalized
 void DiscreteEarth::RotateEarth(double angle, double rx, double ry, double rz){

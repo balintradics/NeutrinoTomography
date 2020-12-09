@@ -38,6 +38,12 @@ int main(int argc, char * argv[]) {
 
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
+  double theta = 0.0;
+  double dtheta = 1.0*PIGREEK/180.0;//d.m_DRad/2.0;
+  double theta_min = 0.0;
+  double theta_max = 2.0*PIGREEK;
+  cout << "Total number of rotations: " << (theta_max - theta_min)/dtheta << endl;
+
   
   // Get list of surface cells along longitude - in unrotated coordinates!
   std::vector<Cell_t> surfCells_Long = d.GetSurfaceCellsLongitude(l);
@@ -50,39 +56,50 @@ int main(int argc, char * argv[]) {
   Quat4d_t basis2;// Z - axis (0, 0, 1)
   d.GetLongitudePlaneBasis(l, &basis1, &basis2);
 
-  cout << "Detector Basis1: " << endl;
-  d.PrintQ(basis1);
-  cout << "Detector Basis2: " << endl;
-  d.PrintQ(basis2);
-
-  d.CreateDetector(basis1, basis2);
-  //  d.PrintDetector();
-
-  // SAFIR form for crystal map
-  // -----------------------
-  // * ring = ringNumber (usually along z-direction)
-  // * crystal = crystalNumber (usually around phi direction)
-  // * layer = layerNumber, not used at the moment, keep it 0
-  // * x, y, z = detector coordinate in mm
-  // * angleRad = orientation in phi direction of the normal of the crystal surface, pointing outwardsin
-  // * crystalLengthMM = length of the crystal, used to emulate the DOI effect on the system matrix (only important if numberOfPointsPerCrystalDOI is set to > 1)
-
-  //#ring   #detector       #layer  x       y       z       angleRad        crystalLengthMM detectorPosition
-  //0       0       0       1.570000000000000e+01   6.405000000000000e+01   -1.680000000000000e+01  0.000000000000000e+00   1.300000000000000e+01   0
-  //0       1       0       1.350000000000000e+01   6.405000000000000e+01   -1.680000000000000e+01  0.000000000000000e+00   1.300000000000000e+01   0
-  //-----------------------
-
-  for(int i = 0; i < d.m_Det1.size(); i++){  
-    outfile << 0 << "\t" << i << "\t" << 0 << "\t" << d.m_Det1[i].x*1e+06 << "\t" << d.m_Det1[i].y*1e+06 << "\t" << d.m_Det1[i].z*1e+06 <<  "\t" << l << "\t" << 1 << "\t" << 0 << endl;
-    //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
-  }
-
-  // also save the "fake" mirror detector
-  for(int i = 0; i < d.m_Det2.size(); i++){
-    outfile << 0 << "\t" << d.m_Det1.size()+i << "\t" << 0 << "\t" << d.m_Det2[i].x*1e+06 << "\t" << d.m_Det2[i].y*1e+06 << "\t" << d.m_Det2[i].z*1e+06 <<  "\t" << l2 << "\t" << 1 << "\t" << 0 << endl;
-    //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
-  }
   
+  for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
+    if(int(theta*180.0/PIGREEK) % 10 == 0)
+      cout << "Rotation: " << theta*180.0/PIGREEK << endl;
+
+    Quat4d_t rbasis1 = d.RotateQuaternion(basis1, normQ, theta);
+    Quat4d_t rbasis2 = d.RotateQuaternion(basis2, normQ, theta);
+    
+    cout << "Detector Basis1: " << endl;
+    d.PrintQ(rbasis1);
+    cout << "Detector Basis2: " << endl;
+    d.PrintQ(rbasis2);
+    cout << "--------------------------" << endl;
+  
+    d.CreateDetector(rbasis1, rbasis2, normQ, theta);
+    //  d.PrintDetector();
+    
+    // SAFIR form for crystal map
+    // -----------------------
+    // * ring = ringNumber (usually along z-direction)
+    // * crystal = crystalNumber (usually around phi direction)
+    // * layer = layerNumber, not used at the moment, keep it 0
+    // * x, y, z = detector coordinate in mm
+    // * angleRad = orientation in phi direction of the normal of the crystal surface, pointing outwardsin
+    // * crystalLengthMM = length of the crystal, used to emulate the DOI effect on the system matrix (only important if numberOfPointsPerCrystalDOI is set to > 1)
+    
+    //#ring   #detector       #layer  x       y       z       angleRad        crystalLengthMM detectorPosition
+    //0       0       0       1.570000000000000e+01   6.405000000000000e+01   -1.680000000000000e+01  0.000000000000000e+00   1.300000000000000e+01   0
+    //0       1       0       1.350000000000000e+01   6.405000000000000e+01   -1.680000000000000e+01  0.000000000000000e+00   1.300000000000000e+01   0
+    //-----------------------
+    
+    for(int i = 0; i < d.m_Det1.size(); i++){  
+      outfile << 0 << "\t" << i << "\t" << 0 << "\t" << d.m_Det1[i].x*1e+06 << "\t" << d.m_Det1[i].y*1e+06 << "\t" << d.m_Det1[i].z*1e+06 <<  "\t" << l << "\t" << 1 << "\t" << 0 << endl;
+      //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
+    }
+    
+    // also save the "fake" mirror detector
+    // for(int i = 0; i < d.m_Det2.size(); i++){
+    //   outfile << 0 << "\t" << d.m_Det1.size()+i << "\t" << 0 << "\t" << d.m_Det2[i].x*1e+06 << "\t" << d.m_Det2[i].y*1e+06 << "\t" << d.m_Det2[i].z*1e+06 <<  "\t" << l2 << "\t" << 1 << "\t" << 0 << endl;
+    //   //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
+    // }
+    
+  }
+
   // Loop over all cells along the longitude to collect all
   for(int is = 0; is < surfCells_Long.size(); is++){
     // Current cell for which we calculate the flux

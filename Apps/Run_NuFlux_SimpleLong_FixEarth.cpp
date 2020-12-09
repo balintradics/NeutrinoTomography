@@ -21,7 +21,7 @@ using namespace std;
 // Calculating the Sinogram from a Slice of the Earth along a longitude
 // using a mean oscillation probability of 0.544
 
-// In this example the detector is fixed and the Earth is rotating
+// In this example the Earth is fixed and the hypothetical detectors are rotating
 
 int main(int argc, char * argv[]) {
 
@@ -31,8 +31,8 @@ int main(int argc, char * argv[]) {
   // We set up a given Radiogenic Composition Model for Earth
   // this is done by the DiscreteEarth class
   d.SetUniformMantle(d.DepMantle);
-  d.SetMantleP1();
-  //  d.SetMantleP2();
+  //  d.SetMantleP1();
+  d.SetMantleP2();
 
   // Prepare output file
   ofstream outfile;
@@ -40,29 +40,14 @@ int main(int argc, char * argv[]) {
   //outfile.open("Sinogram_uniformmantle_Long10_200km.dat");
   //outfile_det.open("Det_sinogram_uniformmantle_Long10_200km.dat");
 
-  outfile.open("Sinogram_pointmantle_Long10_200km.dat");
-  outfile_det.open("Det_sinogram_pointmantle_Long10_200km.dat");
+  outfile.open("Sinogram_point2mantle_Long10_200km.dat");
+  outfile_det.open("Det_sinogram_point2mantle_Long10_200km.dat");
   //outfile.open("Sinogram_point2mantle.dat");
-
-
-
-
-  
-  //  d.SaveCellsLongitudeToFile(PIGREEK*0.0/180.0);
-  //d.SaveSurfaceCellsToFile();
-  //d.SaveFluxMap("test_flux_map.dat");
-
-  // We calculate the local Neutrino Flux at each surface position
-  // by summing over all contributing cells
-  // and evaluating the formula from O. Sramek et al.
-  // Flux(r) = (nX * LambX/4pi) * <P> * \int aX(r')*rho(r')/(|r-r'|)^2 dr'
-  // units: 1 * [1/s] * 1 * [1/kg] * [kg/m3] * m3 / m2 = [m2 / s]
-  // And save it to an output file for each lat, long
 
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
-  double dtheta = 1.0*PIGREEK/180.0;//d.m_DRad/2.0;
+  double dtheta = 10.0*PIGREEK/180.0;//d.m_DRad/2.0;
   double theta_min = 0.0;
   double theta_max = 2.0*PIGREEK;
 
@@ -71,11 +56,9 @@ int main(int argc, char * argv[]) {
   // Get list of surface cells along longitude - in unrotated coordinates!
   std::vector<Cell_t> surfCells_Long = d.GetSurfaceCellsLongitude(l);
 
-
-
   // Prototype of Radon transform: 
-  // - rotate patient and keep the detector fixed 
-  // - collect the 'collimated rays' in a plane for each angle
+  // - Keep patient fixed and rotate the detector
+  // - collect the 'collimated rays' in a plane for each angle for the detector
 
   // Get axis of rotation as a normal vector of the plane of the Longitude
   Quat4d_t normQ = d.GetNormalToLongitude(l);
@@ -85,12 +68,11 @@ int main(int argc, char * argv[]) {
   Quat4d_t basis2;// Z - axis (0, 0, 1)
   d.GetLongitudePlaneBasis(l, &basis1, &basis2);
 
+  // Initial detector plane vectors
   cout << "Detector Basis1: " << endl;
   d.PrintQ(basis1);
   cout << "Detector Basis2: " << endl;
   d.PrintQ(basis2);
-
-  d.CreateDetector(basis1, basis2, normQ, 0);
 
   // Save ListMode binary file
   std::string outlmfname = std::string("lmfile.dat");
@@ -101,11 +83,16 @@ int main(int argc, char * argv[]) {
   // Loop over theta (latitude)
   // l = 0-180 degrees
   for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
-    if(int(theta*180.0/PIGREEK) % 10 == 0)
+    //    cout << "Rotation: " << theta*180.0/PIGREEK << endl;
+    if(int(theta*180.0/PIGREEK) % 10 <= 0.1)
       cout << "Rotation: " << theta*180.0/PIGREEK << endl;
 
-    // Rotate Earth around axis given by the normal to the longitudinal plane
-    d.RotateEarth(dtheta, normQ.x, normQ.y, normQ.z);
+    // Rotate the original basis
+    Quat4d_t rbasis1 = d.RotateQuaternion(basis1, normQ, theta);
+    Quat4d_t rbasis2 = d.RotateQuaternion(basis2, normQ, theta);
+    
+    // Create the temporary detector array at each rotated angle
+    d.CreateDetector(rbasis1, rbasis2, normQ, theta);
 
     // We need to calculate:
     // - Flux vectors with direction parallel to the detector coordinate basis1 vector (collimator approx)
@@ -118,16 +105,16 @@ int main(int argc, char * argv[]) {
     for(int is = 0; is < surfCells_Long.size(); is++){
       // Current cell for which we calculate the flux
       Cell_t s = surfCells_Long[is];
-      int detbin = d.GetDetBin(s, basis2);
+      int detbin = d.GetDetBin(s, rbasis2);
       // only check half circle
       double rc, thetac, phic;
       d.ToSpherical(s.x, s.y, s.z, &rc, &thetac, &phic);
       //  cout << l << ", " << phic << ", " << d.m_DRad << endl;
-      if( fabs(phic-(l+PIGREEK)) > d.m_DRad)
-       	continue;
+      //      if( fabs(phic-(l+PIGREEK)) > d.m_DRad)
+      //       	continue;
       
-      // Need to calculate the position of this point in the fixed detector coordinate system
-      double local_coord = s.x * basis2.x + s.y * basis2.y + s.z * basis2.z;
+      // Need to calculate the position of this point in the detector coordinate system
+      double local_coord = s.x * rbasis2.x + s.y * rbasis2.y + s.z * rbasis2.z;
 
       double FluxU238 = 0; // unit: 
       double meanProb = 0.544; 
@@ -145,7 +132,7 @@ int main(int argc, char * argv[]) {
 	  // Collimator approximation: only accept neutrinos that are parallel
 	  // with the detector plane basis
 	  // u*v = |u|*|v|*cos(theta)
-	  prod = dx*basis1.x+dy*basis1.y+dz*basis1.z;
+	  prod = dx*rbasis1.x+dy*rbasis1.y+dz*rbasis1.z;
 	  cos_theta = prod/(1*mag_d);
 	  if(fabs(cos_theta - 1.0) < 0.01){ // 0.05 should correspnd to ~20 degrees resolution...?
 
