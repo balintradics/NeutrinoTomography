@@ -267,6 +267,32 @@ void DiscreteEarth::CreateDetector(Quat4d_t basis1, Quat4d_t basis2, Quat4d_t qr
      m_Det1.push_back(q);
   }
 
+  // Now add fake detectors at the opposite side
+  // note we start with 1 because we already added the center det cell
+  for(int i = m_NDetCells/2 + 1; i >= 1; i--){
+     Quat4d_t q;
+     q.x = -1.0*basis1.x*R_E - i*m_DetCellSize*linevec.x;
+     q.y = -1.0*basis1.y*R_E - i*m_DetCellSize*linevec.y;
+     q.z = -1.0*basis1.z*R_E - i*m_DetCellSize*linevec.z;
+     q.w = 0.0;
+
+     //     RotateQuaternion(&q, qrot, angle);
+     
+     m_Det2.push_back(q);
+  }
+
+  
+  for(int i = 0; i <= m_NDetCells/2 + 1; i++){
+     Quat4d_t q;
+     q.x = -1.0*basis1.x*R_E + i*m_DetCellSize*linevec.x;
+     q.y = -1.0*basis1.y*R_E + i*m_DetCellSize*linevec.y;
+     q.z = -1.0*basis1.z*R_E + i*m_DetCellSize*linevec.z;
+     q.w = 0.0;
+
+     //     RotateQuaternion(&q, qrot, angle);
+     m_Det2.push_back(q);
+  }
+  
 
 
 }
@@ -1074,7 +1100,7 @@ void DiscreteEarth::OpenLMF(const std::string filename){
 
 }
 
-void DiscreteEarth::ProcessLMF(){
+void DiscreteEarth::ProcessLMF(int crys0, int crys1){
 
   // Process coincidence
 
@@ -1107,11 +1133,11 @@ void DiscreteEarth::ProcessLMF(){
   dataSetEvent.eventEntry.type = 0;
   
   dataSetEvent.eventEntry.ring0 = 0;//hits.at(0)->getRingNumber();
-  dataSetEvent.eventEntry.crystal0 = 0;//hits.at(0)->getCrystalNumber();
+  dataSetEvent.eventEntry.crystal0 = crys0;//hits.at(0)->getCrystalNumber();
   dataSetEvent.eventEntry.layer0 = 0;
   
   dataSetEvent.eventEntry.ring1 = 0;//hits.at(1)->getRingNumber();
-  dataSetEvent.eventEntry.crystal1 = 0;//hits.at(1)->getCrystalNumber();
+  dataSetEvent.eventEntry.crystal1 = crys1;//hits.at(1)->getCrystalNumber();
   dataSetEvent.eventEntry.layer1 = 0;
   
   // const int64_t tDiff = (hits.at(0)->getTime() - hits.at(1)->getTime());

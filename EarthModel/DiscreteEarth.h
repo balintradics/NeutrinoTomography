@@ -162,7 +162,7 @@ class DiscreteEarth {
 
   // Write binary list mode format
   void OpenLMF(const std::string filename);
-  void ProcessLMF();
+  void ProcessLMF(int crys0, int crys1);
   void CloseLMF();
 
   

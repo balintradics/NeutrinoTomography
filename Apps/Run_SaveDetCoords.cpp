@@ -34,12 +34,15 @@ int main(int argc, char * argv[]) {
 
   // Prepare output file
   ofstream outfile;
+  ofstream outfile2; // fake detector coords
+  
   outfile.open("DetectorCoords_10deg_200km.dat");
+  outfile2.open("DetectorCoords_10deg_200km_fake.dat");
 
   double l = 10*PIGREEK/180.0;
   double l2 = (10+180)*PIGREEK/180.0;
   double theta = 0.0;
-  double dtheta = 1.0*PIGREEK/180.0;//d.m_DRad/2.0;
+  double dtheta = 15.0*PIGREEK/180.0;//d.m_DRad/2.0;
   double theta_min = 0.0;
   double theta_max = 2.0*PIGREEK;
   cout << "Total number of rotations: " << (theta_max - theta_min)/dtheta << endl;
@@ -56,6 +59,8 @@ int main(int argc, char * argv[]) {
   Quat4d_t basis2;// Z - axis (0, 0, 1)
   d.GetLongitudePlaneBasis(l, &basis1, &basis2);
 
+  int GlobalDetID1 = 0;
+  int GlobalDetID2 = 1000000;// fake detectors opposite shifted by 1e+06
   
   for(theta = theta_min; theta <= theta_max; theta = theta + dtheta){
     if(int(theta*180.0/PIGREEK) % 10 == 0)
@@ -88,8 +93,15 @@ int main(int argc, char * argv[]) {
     //-----------------------
     
     for(int i = 0; i < d.m_Det1.size(); i++){  
-      outfile << 0 << "\t" << i << "\t" << 0 << "\t" << d.m_Det1[i].x*1e+06 << "\t" << d.m_Det1[i].y*1e+06 << "\t" << d.m_Det1[i].z*1e+06 <<  "\t" << l << "\t" << 1 << "\t" << 0 << endl;
+      outfile << 0 << "\t" << GlobalDetID1 << "\t" << 0 << "\t" << d.m_Det1[i].x*1e+06 << "\t" << d.m_Det1[i].y*1e+06 << "\t" << d.m_Det1[i].z*1e+06 <<  "\t" << l << "\t" << 1 << "\t" << 0 << endl;
       //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
+      GlobalDetID1++;
+    }
+
+    for(int i = 0; i < d.m_Det2.size(); i++){  
+      outfile2 << 0 << "\t" << GlobalDetID2 << "\t" << 0 << "\t" << d.m_Det2[i].x*1e+06 << "\t" << d.m_Det2[i].y*1e+06 << "\t" << d.m_Det2[i].z*1e+06 <<  "\t" << l << "\t" << 1 << "\t" << 0 << endl;
+      //    outfile <<  d.m_Det2[i].x << "\t" << d.m_Det2[i].y << "\t" << d.m_Det2[i].z <<  endl;
+      GlobalDetID2++;
     }
     
     // also save the "fake" mirror detector
@@ -100,29 +112,9 @@ int main(int argc, char * argv[]) {
     
   }
 
-  // Loop over all cells along the longitude to collect all
-  for(int is = 0; is < surfCells_Long.size(); is++){
-    // Current cell for which we calculate the flux
-    Cell_t s = surfCells_Long[is];
-
-    
-    // only check half circle
-    double rc, thetac, phic;
-    d.ToSpherical(s.x, s.y, s.z, &rc, &thetac, &phic);
-    if( fabs(phic-(l+PIGREEK)) > d.m_DRad)
-       	continue;
-    
-    // Need to calculate the position of this point in the fixed detector coordinate system
-    // Basically, inner product of the cell coordinate with the z - axis in 3D
-    //    double z_coord = s.x * basis2.x + s.y * basis2.y + s.z * basis2.z;
-    
-    //Quat4d_t qdet = d.GetDetCoord(s, basis2);
-    //d.PrintQ(qdet);
-    
-
-  }
 
   outfile.close();
+  outfile2.close();
   
   return 0;
 }

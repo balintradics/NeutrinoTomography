@@ -177,7 +177,7 @@ int main(int argc, char * argv[]) {
 
   
 
-  d.ProcessLMF();
+  d.ProcessLMF(0,0);
   d.CloseLMF();
   
   // My: 0 --> Glob: +90
