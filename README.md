@@ -1,6 +1,6 @@
 # Neutrino Tomography of Earth
 
-https://zenodo.org/badge/DOI/10.5281/zenodo.5225746.svg
+![Zenodo url](https://zenodo.org/badge/DOI/10.5281/zenodo.5225746.svg)
 
 ## Description:
 Set of codes to solve the complex diff. equation of neutrino propagation through vacuum/material
