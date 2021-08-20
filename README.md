@@ -1,5 +1,7 @@
 # Neutrino Tomography of Earth
 
+https://zenodo.org/badge/DOI/10.5281/zenodo.5225746.svg
+
 ## Description:
 Set of codes to solve the complex diff. equation of neutrino propagation through vacuum/material
 combined with a customized discretized Earth model with Radioactive Isotope (238U, 235U, 232Th, 40K) distributon and Density models.
